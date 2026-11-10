@@ -61,6 +61,13 @@ module.exports.registerCustomer = async (req, res, next) => {
         });
 
         const token = createCustomerToken(customer);
+        const cookieOpts = {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+        };
+        res.cookie('token', token, cookieOpts);
+        res.cookie('customer_token', token, cookieOpts);
         return res.status(201).json({ token, customer });
     } catch (error) {
         return next(error);
@@ -86,11 +93,13 @@ module.exports.loginCustomer = async (req, res, next) => {
         }
 
         const token = createCustomerToken(customer);
-        res.cookie('token', token, {
+        const cookieOpts = {
             httpOnly: true,
             sameSite: 'strict',
             secure: process.env.NODE_ENV === 'production',
-        });
+        };
+        res.cookie('token', token, cookieOpts);
+        res.cookie('customer_token', token, cookieOpts);
 
         return res.status(200).json({ token, customer });
     } catch (error) {
@@ -104,11 +113,17 @@ module.exports.getCustomerProfile = (req, res) => {
 
 module.exports.logoutCustomer = async (req, res, next) => {
     try {
-        const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
-        res.clearCookie('token');
+        const token = req.cookies?.customer_token || req.cookies?.token || req.headers.authorization?.split(' ')[1];
+        const cookieOpts = {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+        };
+        res.clearCookie('token', cookieOpts);
+        res.clearCookie('customer_token', cookieOpts);
 
         if (token) {
-            await blackListTokenModel.create({ token });
+            await blackListTokenModel.create({ token }).catch(() => {});
         }
 
         return res.status(200).json({ message: 'Logged out' });
@@ -128,6 +143,7 @@ module.exports.getCustomerLocation = async (req, res) => {
         return res.status(200).json({
             success: true,
             location: customer.location || null,
+            address: customer.address || null,
             locationUpdatedAt: customer.locationUpdatedAt || null,
         });
     } catch (error) {
@@ -137,7 +153,7 @@ module.exports.getCustomerLocation = async (req, res) => {
 };
 
 module.exports.updateCustomerLocation = async (req, res) => {
-    const { latitude, longitude } = req.body;
+    const { latitude, longitude, address } = req.body;
     const validation = validateLocationPayload(latitude, longitude);
 
     if (!validation.valid) {
@@ -152,6 +168,9 @@ module.exports.updateCustomerLocation = async (req, res) => {
         }
 
         customer.location = validation.location;
+        if (address && typeof address === 'string') {
+            customer.address = address.trim();
+        }
         customer.locationUpdatedAt = new Date();
         await customer.save();
 
@@ -159,6 +178,7 @@ module.exports.updateCustomerLocation = async (req, res) => {
             success: true,
             message: 'Customer location updated successfully',
             location: customer.location,
+            address: customer.address,
             locationUpdatedAt: customer.locationUpdatedAt,
         });
     } catch (error) {

@@ -56,6 +56,11 @@ const customerSchema = new mongoose.Schema(
         default: null,
       },
     },
+    address: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     locationUpdatedAt: {
       type: Date,
       default: null,

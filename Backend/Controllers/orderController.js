@@ -3,8 +3,11 @@ const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const Shop = require("../models/ShopModel");
 const ShopProduct = require("../models/ShopProduct");
+const Captain = require("../models/CaptainModel");
 const notificationService = require("../services/notificationService");
 const paymentService = require("../services/paymentService");
+const localityService = require("../services/localityService");
+const { emitToUser, emitToRole, emitToOrder } = require("../services/socketService");
 
 const validFulfillmentTypes = ["pickup", "delivery"];
 const validOrderStatuses = ["placed", "accepted", "preparing", "ready", "picked_up", "out_for_delivery", "completed", "cancelled"];
@@ -17,7 +20,15 @@ const getAuthenticatedShop = async (req, res) => {
     return res.status(401).json({ success: false, message: "Authentication required" });
   }
 
-  const shop = await Shop.findOne({ owner: ownerId });
+  let shop = null;
+  const requestedShopId = req.query?.shopId || req.params?.shopId || req.body?.shopId;
+  if (requestedShopId && mongoose.Types.ObjectId.isValid(requestedShopId)) {
+    shop = await Shop.findOne({ _id: requestedShopId, owner: ownerId });
+  }
+
+  if (!shop) {
+    shop = await Shop.findOne({ owner: ownerId });
+  }
 
   if (!shop) {
     return res.status(404).json({ success: false, message: "Shop not found for this owner" });
@@ -189,6 +200,56 @@ const createOrder = async (req, res) => {
       console.error("Order placement notification failed:", notificationError);
     }
 
+    // Real-time synchronization and Captain Locality Dispatch
+    try {
+      const populatedOrder = await Order.findById(createdOrder._id)
+        .populate("shop", "owner shopName address locality location")
+        .populate("customer", "name phone");
+
+      if (populatedOrder?.shop?.owner) {
+        emitToUser(populatedOrder.shop.owner, "new_order", populatedOrder);
+      }
+
+      // If delivery order, identify and notify eligible Captains whose coverage includes this order
+      if (createdOrder.fulfillmentType === "delivery") {
+        const potentialCaptains = await Captain.find({
+          isActive: true,
+          accountStatus: { $ne: "suspended" },
+        });
+
+        const { pickupLocality, deliveryLocality } = localityService.resolveOrderLocalities(populatedOrder);
+        const localityLabel = deliveryLocality?.name || pickupLocality?.name || "your service area";
+
+        for (const captain of potentialCaptains) {
+          const isEligible = localityService.isOrderCoveredByCaptain(populatedOrder, captain);
+          if (isEligible) {
+            // 1. Create persistent notification in MongoDB
+            await notificationService.notifyCaptainNewDeliveryAvailable(
+              captain._id,
+              populatedOrder,
+              localityLabel
+            ).catch(() => {});
+
+            // 2. Emit real-time Socket.IO event to captain's authenticated room
+            emitToUser(captain._id, "new_delivery_available", {
+              orderId: populatedOrder._id,
+              shopName: populatedOrder.shop?.shopName || "Nearby Kirana",
+              shopLocality: pickupLocality?.name || "Hyderabad",
+              deliveryLocality: deliveryLocality?.name || "Hyderabad",
+              totalAmount: populatedOrder.totalAmount,
+              itemsCount: populatedOrder.items?.length || 0,
+              fulfillmentType: populatedOrder.fulfillmentType,
+              orderStatus: populatedOrder.orderStatus,
+              paymentMethod: populatedOrder.payment?.method || "cod",
+              createdAt: populatedOrder.createdAt,
+            });
+          }
+        }
+      }
+    } catch (dispatchError) {
+      console.error("Captain dispatch notification failed:", dispatchError);
+    }
+
     return res.status(201).json({ message: "Order placed successfully", order: createdOrder });
   } catch (error) {
     if (session && session.inTransaction()) {
@@ -208,7 +269,20 @@ const createOrder = async (req, res) => {
 
 const getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ customer: req.user._id }).sort({ createdAt: -1 });
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = req.query.limit !== undefined ? Math.min(100, Math.max(1, Number(req.query.limit))) : null;
+
+    let queryBuilder = Order.find({ customer: req.user._id })
+      .sort({ createdAt: -1 })
+      .populate("shop", "shopName address contact status location")
+      .populate("captain", "name phone vehicle location locationUpdatedAt")
+      .lean();
+
+    if (limit) {
+      queryBuilder = queryBuilder.skip((page - 1) * limit).limit(limit);
+    }
+
+    const orders = await queryBuilder;
     return res.status(200).json({ orders });
   } catch (error) {
     console.error("Fetch my orders failed:", error);
@@ -224,7 +298,9 @@ const getOrderById = async (req, res) => {
   }
 
   try {
-    const order = await Order.findOne({ _id: orderId, customer: req.user._id }).populate("shop", "shopName address contact status");
+    const order = await Order.findOne({ _id: orderId, customer: req.user._id })
+      .populate("shop", "shopName address contact status location")
+      .populate("captain", "name phone vehicle location locationUpdatedAt");
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
@@ -323,9 +399,20 @@ const getShopOrders = async (req, res) => {
       query.fulfillmentType = fulfillmentType;
     }
 
-    const orders = await Order.find(query)
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = req.query.limit !== undefined ? Math.min(100, Math.max(1, Number(req.query.limit))) : null;
+
+    let queryBuilder = Order.find(query)
       .sort({ createdAt: -1 })
-      .populate("customer", "name phone");
+      .populate("customer", "name phone")
+      .populate("captain", "name phone vehicle location locationUpdatedAt")
+      .lean();
+
+    if (limit) {
+      queryBuilder = queryBuilder.skip((page - 1) * limit).limit(limit);
+    }
+
+    const orders = await queryBuilder;
 
     return res.status(200).json({ success: true, orders });
   } catch (error) {
@@ -358,6 +445,7 @@ const getShopOrderById = async (req, res) => {
     }
 
     await order.populate("customer", "name phone");
+    await order.populate("captain", "name phone vehicle location locationUpdatedAt");
 
     return res.status(200).json({ success: true, order });
   } catch (error) {
@@ -403,6 +491,12 @@ const acceptOrder = async (req, res) => {
       await notificationService.notifyOrderAccepted(order);
     } catch (notificationError) {
       console.error("Order accepted notification failed:", notificationError);
+    }
+
+    emitToOrder(order._id, "order_status_updated", { orderId: order._id, orderStatus: "accepted" });
+    emitToUser(order.customer, "order_status_updated", { orderId: order._id, orderStatus: "accepted" });
+    if (order.captain) {
+      emitToUser(order.captain, "order_status_updated", { orderId: order._id, orderStatus: "accepted" });
     }
 
     return res.status(200).json({ success: true, message: "Order accepted successfully", order });
@@ -471,6 +565,12 @@ const updateShopOrderStatus = async (req, res) => {
       await notificationService.notifyOrderStatusUpdate(order, status);
     } catch (notificationError) {
       console.error("Order status notification failed:", notificationError);
+    }
+
+    emitToOrder(order._id, "order_status_updated", { orderId: order._id, orderStatus: status });
+    emitToUser(order.customer, "order_status_updated", { orderId: order._id, orderStatus: status });
+    if (order.captain) {
+      emitToUser(order.captain, "order_status_updated", { orderId: order._id, orderStatus: status });
     }
 
     return res.status(200).json({ success: true, message: "Order status updated successfully", order });

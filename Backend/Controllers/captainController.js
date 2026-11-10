@@ -5,11 +5,82 @@ const Order = require("../models/Order");
 const blackListTokenModel = require("../models/blackListTokenModel");
 const notificationService = require("../services/notificationService");
 const paymentService = require("../services/paymentService");
+const localityService = require("../services/localityService");
+const { emitToUser, emitToRole, emitToOrder } = require("../services/socketService");
+const { calculateHaversineDistanceKm } = require("../services/localityService");
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phonePattern = /^\+?[\d\s().-]+$/;
 const validVehicleTypes = ["bike", "scooter", "car", "other"];
 const validAvailabilityStatuses = ["offline", "available", "busy"];
+
+const normalizeServiceAreas = (areas) => {
+  if (!Array.isArray(areas)) return [];
+  const seen = new Set();
+  const result = [];
+
+  for (const item of areas) {
+    if (!item) continue;
+    let localityId = "";
+    let name = "";
+    let zone = "";
+    let sublocalities = [];
+    let latitude = null;
+    let longitude = null;
+
+    if (typeof item === "string") {
+      const reg = localityService.findLocalityById(item) || localityService.resolveLocalityFromAddress(item);
+      if (reg) {
+        localityId = reg.id;
+        name = reg.name;
+        zone = reg.zone;
+        sublocalities = reg.sublocalities;
+        latitude = reg.latitude;
+        longitude = reg.longitude;
+      } else {
+        localityId = item.trim().toLowerCase().replace(/\s+/g, "-");
+        name = item.trim();
+      }
+    } else if (typeof item === "object") {
+      const idCandidate = item.localityId || item.id || item.name;
+      const reg =
+        localityService.findLocalityById(idCandidate) ||
+        localityService.resolveLocalityFromAddress(item.name || idCandidate);
+      if (reg) {
+        localityId = reg.id;
+        name = reg.name;
+        zone = reg.zone;
+        sublocalities = reg.sublocalities;
+        latitude = reg.latitude;
+        longitude = reg.longitude;
+      } else {
+        localityId = String(item.localityId || item.id || item.name || "")
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "-");
+        name = String(item.name || item.localityId || "").trim();
+        zone = String(item.zone || "").trim();
+        sublocalities = Array.isArray(item.sublocalities) ? item.sublocalities : [];
+        latitude = Number(item.latitude) || null;
+        longitude = Number(item.longitude) || null;
+      }
+    }
+
+    if (localityId && !seen.has(localityId)) {
+      seen.add(localityId);
+      result.push({
+        localityId,
+        name,
+        zone,
+        sublocalities,
+        latitude,
+        longitude,
+      });
+    }
+  }
+
+  return result;
+};
 
 const validateLocationPayload = (latitude, longitude) => {
   const lat = Number(latitude);
@@ -114,9 +185,22 @@ const registerCaptain = async (req, res) => {
       vehicle: normalizedVehicle,
     });
 
+    const token = jwt.sign({ _id: captain._id, role: "captain" }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
+
+    const cookieOpts = {
+      httpOnly: true,
+      sameSite: "strict",
+      secure: process.env.NODE_ENV === "production",
+    };
+    res.cookie("token", token, cookieOpts);
+    res.cookie("captain_token", token, cookieOpts);
+
     return res.status(201).json({
       success: true,
       message: "Captain registered successfully",
+      token,
       captain: safeCaptainResponse(captain),
     });
   } catch (error) {
@@ -161,15 +245,18 @@ const loginCaptain = async (req, res) => {
       expiresIn: "1d",
     });
 
-    res.cookie("token", token, {
+    const cookieOpts = {
       httpOnly: true,
       sameSite: "strict",
       secure: process.env.NODE_ENV === "production",
-    });
+    };
+    res.cookie("token", token, cookieOpts);
+    res.cookie("captain_token", token, cookieOpts);
 
     return res.status(200).json({
       success: true,
       message: "Captain logged in successfully",
+      token,
       captain: safeCaptainResponse(captain),
     });
   } catch (error) {
@@ -179,18 +266,20 @@ const loginCaptain = async (req, res) => {
 };
 
 const logoutCaptain = async (req, res) => {
-  const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+  const token = req.cookies?.captain_token || req.cookies?.token || req.headers.authorization?.split(" ")[1];
+  const cookieOpts = {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+  };
 
   try {
     if (token) {
       await blackListTokenModel.create({ token }).catch(() => {});
     }
 
-    res.clearCookie("token", {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: process.env.NODE_ENV === "production",
-    });
+    res.clearCookie("token", cookieOpts);
+    res.clearCookie("captain_token", cookieOpts);
 
     return res.status(200).json({ success: true, message: "Captain logged out successfully" });
   } catch (error) {
@@ -237,6 +326,10 @@ const updateCaptainProfile = async (req, res) => {
     updates.vehicle = normalizedVehicle;
   }
 
+  if (req.body.serviceAreas !== undefined) {
+    updates.serviceAreas = normalizeServiceAreas(req.body.serviceAreas);
+  }
+
   if (Object.keys(updates).length === 0) {
     return res.status(400).json({ success: false, message: "No profile fields to update" });
   }
@@ -266,6 +359,52 @@ const updateCaptainProfile = async (req, res) => {
   } catch (error) {
     console.error("Captain profile update failed:", error);
     return res.status(500).json({ success: false, message: "Unable to update captain profile" });
+  }
+};
+
+const getCaptainServiceAreas = async (req, res) => {
+  try {
+    const captain = await Captain.findById(req.user._id);
+    if (!captain) {
+      return res.status(404).json({ success: false, message: "Captain not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      serviceAreas: captain.serviceAreas || [],
+      availableLocalities: localityService.getAllLocalities(),
+    });
+  } catch (error) {
+    console.error("Fetch service areas failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to retrieve service areas" });
+  }
+};
+
+const updateCaptainServiceAreas = async (req, res) => {
+  const { serviceAreas } = req.body;
+
+  if (!Array.isArray(serviceAreas)) {
+    return res.status(400).json({ success: false, message: "serviceAreas must be an array" });
+  }
+
+  try {
+    const captain = await Captain.findById(req.user._id);
+    if (!captain) {
+      return res.status(404).json({ success: false, message: "Captain not found" });
+    }
+
+    const normalized = normalizeServiceAreas(serviceAreas);
+    captain.serviceAreas = normalized;
+    await captain.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Service areas updated successfully",
+      serviceAreas: captain.serviceAreas,
+    });
+  } catch (error) {
+    console.error("Update service areas failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to update service areas" });
   }
 };
 
@@ -375,15 +514,190 @@ const ensureDeliveryOrderAccess = async (req, res, orderId) => {
   return { order };
 };
 
+const getAvailableDeliveries = async (req, res) => {
+  try {
+    const captain = await Captain.findById(req.user._id);
+    if (!captain) {
+      return res.status(404).json({ success: false, message: "Captain not found" });
+    }
+
+    // Unassigned delivery orders awaiting fulfillment
+    const orders = await Order.find({
+      fulfillmentType: "delivery",
+      captain: null,
+      orderStatus: { $in: ["placed", "accepted", "preparing", "ready"] },
+    })
+      .sort({ createdAt: -1 })
+      .populate("shop", "shopName address location contact")
+      .lean();
+
+    const availableOrders = [];
+
+    for (const order of orders) {
+      const isEligible = localityService.isOrderCoveredByCaptain(order, captain);
+      if (!isEligible) {
+        continue;
+      }
+
+      const { pickupLocality, deliveryLocality } = localityService.resolveOrderLocalities(order);
+
+      // Estimated distance if coordinates available
+      let estimatedDistanceKm = null;
+      if (captain.location?.latitude && order.shop?.location?.latitude) {
+        estimatedDistanceKm = Number(
+          calculateHaversineDistanceKm(
+            captain.location.latitude,
+            captain.location.longitude,
+            order.shop.location.latitude,
+            order.shop.location.longitude
+          ).toFixed(1)
+        );
+      } else if (order.shop?.location?.latitude && order.deliveryLocation?.latitude) {
+        estimatedDistanceKm = Number(
+          calculateHaversineDistanceKm(
+            order.shop.location.latitude,
+            order.shop.location.longitude,
+            order.deliveryLocation.latitude,
+            order.deliveryLocation.longitude
+          ).toFixed(1)
+        );
+      }
+
+      availableOrders.push({
+        _id: order._id,
+        orderId: order._id,
+        shopName: order.shop?.shopName || "Nearby Kirana",
+        shopAddress: order.shop?.address || "",
+        shopLocality: pickupLocality?.name || "Hyderabad",
+        deliveryLocality: deliveryLocality?.name || "Hyderabad",
+        totalAmount: order.totalAmount,
+        itemsCount: order.items?.length || 0,
+        fulfillmentType: order.fulfillmentType,
+        orderStatus: order.orderStatus,
+        paymentMethod: order.payment?.method || "cod",
+        estimatedDistanceKm,
+        createdAt: order.createdAt,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      deliveries: availableOrders,
+      totalCount: availableOrders.length,
+    });
+  } catch (error) {
+    console.error("Fetch available deliveries failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to retrieve available deliveries" });
+  }
+};
+
+const acceptDelivery = async (req, res) => {
+  const { orderId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(orderId)) {
+    return res.status(400).json({ success: false, message: "Invalid order ID" });
+  }
+
+  try {
+    const captain = await Captain.findById(req.user._id);
+    if (!captain) {
+      return res.status(404).json({ success: false, message: "Captain not found" });
+    }
+
+    if (!captain.isActive) {
+      return res.status(403).json({ success: false, message: "Captain account is inactive" });
+    }
+
+    // Atomic database update prevents race conditions across competing captains
+    const order = await Order.findOneAndUpdate(
+      {
+        _id: orderId,
+        fulfillmentType: "delivery",
+        captain: null, // CONCURRENCY SAFE: only claims if still unassigned
+        orderStatus: { $in: ["placed", "accepted", "preparing", "ready"] },
+      },
+      {
+        $set: {
+          captain: captain._id,
+          "delivery.assignedAt": new Date(),
+        },
+      },
+      { new: true }
+    )
+      .populate("customer", "name phone")
+      .populate("shop", "shopName address contact location owner");
+
+    if (!order) {
+      return res.status(409).json({
+        success: false,
+        message: "Order no longer available or already claimed by another captain",
+      });
+    }
+
+    // Create persistent notifications for customer, shop owner, and captain
+    try {
+      await notificationService.notifyCaptainAssigned(order);
+      await notificationService.createNotification({
+        recipient: order.customer._id || order.customer,
+        recipientRole: "customer",
+        type: "CAPTAIN_ASSIGNED",
+        title: "Captain Assigned",
+        message: `${captain.name} has accepted your delivery order.`,
+        relatedEntity: { entityType: "Order", entityId: order._id },
+      });
+
+      if (order.shop?.owner) {
+        await notificationService.createNotification({
+          recipient: order.shop.owner,
+          recipientRole: "shopOwner",
+          type: "CAPTAIN_ASSIGNED",
+          title: "Captain Assigned",
+          message: `Captain ${captain.name} has claimed delivery for order #${String(order._id).slice(-6).toUpperCase()}.`,
+          relatedEntity: { entityType: "Order", entityId: order._id },
+        });
+      }
+    } catch (notifErr) {
+      console.error("Assignment notifications failed:", notifErr);
+    }
+
+    // Real-time Socket.IO synchronization
+    const captainInfo = {
+      id: captain._id,
+      name: captain.name,
+      phone: captain.phone,
+      vehicle: captain.vehicle,
+      location: captain.location,
+    };
+
+    emitToUser(captain._id, "delivery_assigned", { orderId: order._id, order });
+    emitToUser(order.customer._id || order.customer, "captain_assigned", { orderId: order._id, captain: captainInfo });
+    if (order.shop?.owner) {
+      emitToUser(order.shop.owner, "captain_assigned", { orderId: order._id, captain: captainInfo });
+    }
+    emitToRole("captain", "delivery_claimed", { orderId: order._id });
+    emitToOrder(order._id, "captain_assigned", { orderId: order._id, captain: captainInfo });
+
+    return res.status(200).json({
+      success: true,
+      message: "Delivery mission accepted successfully",
+      delivery: order,
+    });
+  } catch (error) {
+    console.error("Accept delivery failed:", error);
+    return res.status(500).json({ success: false, message: "Unable to accept delivery" });
+  }
+};
+
 const getCurrentDelivery = async (req, res) => {
   try {
     const order = await Order.findOne({
       captain: req.user._id,
       fulfillmentType: "delivery",
-      orderStatus: { $in: ["ready", "picked_up", "out_for_delivery"] },
+      orderStatus: { $in: ["placed", "accepted", "preparing", "ready", "picked_up", "out_for_delivery"] },
     })
+      .sort({ updatedAt: -1 })
       .populate("customer", "name phone")
-      .populate("shop", "shopName address contact");
+      .populate("shop", "shopName address contact location owner");
 
     return res.status(200).json({
       success: true,
@@ -419,6 +733,17 @@ const confirmArrivalAtShop = async (req, res) => {
 
     order.delivery.arrivedAt = new Date();
     await order.save();
+
+    emitToOrder(order._id, "order_status_updated", {
+      orderId: order._id,
+      orderStatus: order.orderStatus,
+      delivery: order.delivery,
+    });
+    emitToUser(order.customer?._id || order.customer, "order_status_updated", {
+      orderId: order._id,
+      orderStatus: order.orderStatus,
+      delivery: order.delivery,
+    });
 
     return res.status(200).json({
       success: true,
@@ -470,6 +795,24 @@ const confirmPickup = async (req, res) => {
       console.error("Pickup notification failed:", notificationError);
     }
 
+    emitToOrder(order._id, "order_status_updated", {
+      orderId: order._id,
+      orderStatus: "picked_up",
+      delivery: order.delivery,
+    });
+    emitToUser(order.customer?._id || order.customer, "order_status_updated", {
+      orderId: order._id,
+      orderStatus: "picked_up",
+      delivery: order.delivery,
+    });
+    if (order.shop?.owner) {
+      emitToUser(order.shop.owner, "order_status_updated", {
+        orderId: order._id,
+        orderStatus: "picked_up",
+        delivery: order.delivery,
+      });
+    }
+
     return res.status(200).json({
       success: true,
       message: "Order picked up successfully",
@@ -510,6 +853,24 @@ const startDelivery = async (req, res) => {
       await notificationService.notifyOrderStatusUpdate(order, "out_for_delivery");
     } catch (notificationError) {
       console.error("Out for delivery notification failed:", notificationError);
+    }
+
+    emitToOrder(order._id, "order_status_updated", {
+      orderId: order._id,
+      orderStatus: "out_for_delivery",
+      delivery: order.delivery,
+    });
+    emitToUser(order.customer?._id || order.customer, "order_status_updated", {
+      orderId: order._id,
+      orderStatus: "out_for_delivery",
+      delivery: order.delivery,
+    });
+    if (order.shop?.owner) {
+      emitToUser(order.shop.owner, "order_status_updated", {
+        orderId: order._id,
+        orderStatus: "out_for_delivery",
+        delivery: order.delivery,
+      });
     }
 
     return res.status(200).json({
@@ -583,6 +944,19 @@ const completeDelivery = async (req, res) => {
       console.error("Delivery completion notification failed:", notificationError);
     }
 
+    emitToOrder(order._id, "order_status_updated", {
+      orderId: order._id,
+      orderStatus: "completed",
+      delivery: order.delivery,
+    });
+    emitToOrder(order._id, "delivery_completed", { orderId: order._id });
+    emitToUser(order.customer?._id || order.customer, "order_status_updated", {
+      orderId: order._id,
+      orderStatus: "completed",
+      delivery: order.delivery,
+    });
+    emitToUser(order.customer?._id || order.customer, "delivery_completed", { orderId: order._id });
+
     return res.status(200).json({
       success: true,
       message: "Delivery completed successfully",
@@ -601,17 +975,28 @@ const completeDelivery = async (req, res) => {
 
 const getDeliveryHistory = async (req, res) => {
   try {
-    const orders = await Order.find({
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const limit = req.query.limit !== undefined ? Math.min(100, Math.max(1, Number(req.query.limit))) : null;
+
+    let queryBuilder = Order.find({
       captain: req.user._id,
       fulfillmentType: "delivery",
     })
       .sort({ updatedAt: -1, createdAt: -1 })
       .populate("customer", "name phone")
-      .populate("shop", "shopName address contact");
+      .populate("shop", "shopName address contact location")
+      .lean();
+
+    if (limit) {
+      queryBuilder = queryBuilder.skip((page - 1) * limit).limit(limit);
+    }
+
+    const orders = await queryBuilder;
 
     return res.status(200).json({
       success: true,
       deliveries: orders,
+      count: orders.length,
     });
   } catch (error) {
     console.error("Fetch delivery history failed:", error);
@@ -657,6 +1042,28 @@ const updateCaptainLocation = async (req, res) => {
     captain.locationUpdatedAt = new Date();
     await captain.save();
 
+    // If captain has an active delivery in progress, emit real-time location update to order tracking room
+    try {
+      const activeOrder = await Order.findOne({
+        captain: req.user._id,
+        fulfillmentType: "delivery",
+        orderStatus: { $in: ["picked_up", "out_for_delivery"] },
+      });
+
+      if (activeOrder) {
+        emitToOrder(activeOrder._id, "captain_location_updated", {
+          orderId: activeOrder._id,
+          captain: {
+            latitude: validation.location.latitude,
+            longitude: validation.location.longitude,
+          },
+          updatedAt: captain.locationUpdatedAt,
+        });
+      }
+    } catch (locEmitErr) {
+      // non-critical socket emission
+    }
+
     return res.status(200).json({
       success: true,
       message: "Captain location updated successfully",
@@ -679,6 +1086,10 @@ module.exports = {
   updateCaptainAvailability,
   getCaptainLocation,
   updateCaptainLocation,
+  getCaptainServiceAreas,
+  updateCaptainServiceAreas,
+  getAvailableDeliveries,
+  acceptDelivery,
   getCurrentDelivery,
   confirmArrivalAtShop,
   confirmPickup,

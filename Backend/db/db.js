@@ -6,7 +6,16 @@ async function connectToDb(uri = process.env.MONGODB_URI) {
         throw new Error('MONGODB_URI is not set. Set it to your MongoDB connection string.');
     }
 
-    await mongoose.connect(uri);
+    if (mongoose.connection.readyState === 1) {
+        return mongoose;
+    }
+
+    await mongoose.connect(uri, {
+        maxPoolSize: 25,
+        minPoolSize: 2,
+        serverSelectionTimeoutMS: 8000,
+        socketTimeoutMS: 45000,
+    });
     console.log('Connected to DB');
     return mongoose;
 }

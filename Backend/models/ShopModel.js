@@ -52,6 +52,7 @@ const shopSchema = new mongoose.Schema(
 );
 
 shopSchema.index({ owner: 1 });
+shopSchema.index({ status: 1 });
 
 const ShopModel = mongoose.model("Shop", shopSchema);
 

@@ -962,3 +962,28 @@ Customer
 ```
 
 NearBuy is under active development. Additional modules will be added incrementally as the platform evolves.
+
+## 21. Development Database Seeding
+
+A comprehensive development seeding script is available in `scripts/seedKiranaData.js` to populate realistic kirana shops, synthetic owner accounts, and a large categorized grocery catalogue in and around **Murad Nagar, Asif Nagar, Hyderabad (Telangana)**.
+
+### Commands
+
+```bash
+# Safe idempotent upsert (default)
+npm run seed:kirana
+
+# Opt-in reset and re-seed (scoped strictly to seed-created records)
+npm run seed:kirana:reset
+
+# Run post-seed validation suite
+node scripts/verifySeedData.js
+```
+
+### Seed Data Highlights
+
+- **10 Nearby Kirana Stores:** Seeded around Murad Nagar, Zeba Bagh, Dattadari Colony, Syed Ali Guda, Asif Nagar, Alapathi Nagar, and Viswash Nagar.
+- **10 Synthetic Owner Accounts:** `murad.owner01@nearbuy.test` through `murad.owner10@nearbuy.test` (password: `NearBuy@Demo2025!`).
+- **118 Distinct FMCG Products:** Across 12 grocery categories with realistic INR prices.
+- **Cross-Shop Comparisons:** 80+ products available across 8 to 10 shops with moderate price variations (1% to 5%) to support multi-shop price comparison.
+- Full details are documented in `scripts/README.md`.

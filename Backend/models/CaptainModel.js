@@ -102,6 +102,39 @@ const captainSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected", "suspended"],
       default: "pending",
     },
+    serviceAreas: [
+      {
+        localityId: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        name: {
+          type: String,
+          required: true,
+          trim: true,
+        },
+        zone: {
+          type: String,
+          trim: true,
+          default: "",
+        },
+        sublocalities: [
+          {
+            type: String,
+            trim: true,
+          },
+        ],
+        latitude: {
+          type: Number,
+          default: null,
+        },
+        longitude: {
+          type: Number,
+          default: null,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
@@ -123,6 +156,9 @@ captainSchema.methods.toJSON = function () {
   delete captain.password;
   return captain;
 };
+
+captainSchema.index({ availabilityStatus: 1, accountStatus: 1, isActive: 1 });
+captainSchema.index({ "location.latitude": 1, "location.longitude": 1 });
 
 const CaptainModel = mongoose.model("Captain", captainSchema);
 

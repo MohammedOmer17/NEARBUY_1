@@ -164,7 +164,13 @@ const assessShop = async (shop, customerLocation, normalizedItems, fulfillmentTy
   }
 
   if (fulfillmentType === "delivery") {
-    if (!customerLocation || !customerLocation.latitude || !customerLocation.longitude) {
+    if (
+      !customerLocation ||
+      customerLocation.latitude === null ||
+      customerLocation.latitude === undefined ||
+      customerLocation.longitude === null ||
+      customerLocation.longitude === undefined
+    ) {
       const error = new Error("Customer location is required for delivery assessment");
       error.statusCode = 400;
       throw error;
@@ -192,8 +198,28 @@ const assessShop = async (shop, customerLocation, normalizedItems, fulfillmentTy
     };
   }
 
-  const fakeDistance = { meters: 0, kilometers: 0 };
-  const fakeDuration = { seconds: 0, minutes: 0 };
+  // Pickup fulfillment: calculate actual distance if customer location is provided; otherwise null
+  let pickupDistance = null;
+  let pickupDuration = null;
+
+  if (
+    customerLocation &&
+    customerLocation.latitude !== null &&
+    customerLocation.latitude !== undefined &&
+    customerLocation.longitude !== null &&
+    customerLocation.longitude !== undefined &&
+    shop.location
+  ) {
+    try {
+      const validatedCustomerLocation = validateCoordinates(customerLocation, "Customer location");
+      const validatedShopLocation = validateCoordinates(shop.location, "Shop location");
+      const routeData = await calculateRoute(validatedCustomerLocation, validatedShopLocation);
+      pickupDistance = routeData.distance;
+      pickupDuration = routeData.duration;
+    } catch {
+      // unavailable location handled gracefully
+    }
+  }
 
   return {
     shop: {
@@ -202,8 +228,8 @@ const assessShop = async (shop, customerLocation, normalizedItems, fulfillmentTy
       address: shop.address,
       location: shop.location,
     },
-    distance: fakeDistance,
-    duration: fakeDuration,
+    distance: pickupDistance,
+    duration: pickupDuration,
     totalAmount,
     items: evaluatedItems,
   };
@@ -211,6 +237,8 @@ const assessShop = async (shop, customerLocation, normalizedItems, fulfillmentTy
 
 const sortAssessmentResults = (results) => {
   return [...results].sort((a, b) => {
+    if (a.distance && !b.distance) return -1;
+    if (!a.distance && b.distance) return 1;
     const distanceDiff = (a.distance?.meters || 0) - (b.distance?.meters || 0);
     if (distanceDiff !== 0) {
       return distanceDiff;

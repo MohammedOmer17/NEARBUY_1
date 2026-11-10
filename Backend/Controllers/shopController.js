@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
 const Shop = require('../models/ShopModel');
+const CustomerModel = require('../models/CustomerModel');
 
 const allowedStatuses = ['active', 'inactive', 'suspended'];
 const editableFields = ['shopName', 'address', 'latitude', 'longitude', 'contact'];
@@ -122,9 +124,117 @@ const updateShopStatus = async (req, res) => {
     }
 };
 
+const calculateHaversineDistanceKm = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Earth's mean radius in km
+    const toRad = (deg) => (deg * Math.PI) / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) *
+            Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+};
+
+const isValidCoord = (num, min, max) =>
+    num !== null && num !== undefined && typeof num === 'number' && Number.isFinite(num) && num >= min && num <= max;
+
+const getNearbyShops = async (req, res) => {
+    try {
+        const { latitude, longitude, maxDistanceKm } = req.query;
+        let lat = latitude !== undefined && latitude !== null && latitude !== '' ? Number(latitude) : null;
+        let lng = longitude !== undefined && longitude !== null && longitude !== '' ? Number(longitude) : null;
+        const maxDist =
+            maxDistanceKm !== undefined && Number.isFinite(Number(maxDistanceKm)) && Number(maxDistanceKm) > 0
+                ? Number(maxDistanceKm)
+                : 30; // default 30 km radius
+
+        // If coordinates not passed in query, fallback to customer profile location if authenticated
+        if ((lat === null || lng === null) && (req.cookies?.token || req.headers.authorization)) {
+            try {
+                const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+                if (token) {
+                    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                    const customer = await CustomerModel.findById(decoded._id).select('location');
+                    if (
+                        customer?.location &&
+                        isValidCoord(customer.location.latitude, -90, 90) &&
+                        isValidCoord(customer.location.longitude, -180, 180)
+                    ) {
+                        lat = customer.location.latitude;
+                        lng = customer.location.longitude;
+                    }
+                }
+            } catch {
+                // Ignore optional auth token extraction failure
+            }
+        }
+
+        const filter = { status: 'active' };
+        const shops = await Shop.find(filter)
+            .select('shopName address location contact status paymentDetails')
+            .lean();
+
+        res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=30');
+
+        const hasCustomerCoords = lat !== null && lng !== null && isValidCoord(lat, -90, 90) && isValidCoord(lng, -180, 180);
+
+        if (hasCustomerCoords) {
+            const rankedShops = shops
+                .map((shop) => {
+                    const hasShopCoords =
+                        shop &&
+                        shop.location &&
+                        isValidCoord(shop.location.latitude, -90, 90) &&
+                        isValidCoord(shop.location.longitude, -180, 180);
+
+                    const distanceKm = hasShopCoords
+                        ? Number(
+                              calculateHaversineDistanceKm(
+                                  lat,
+                                  lng,
+                                  shop.location.latitude,
+                                  shop.location.longitude
+                              ).toFixed(2)
+                          )
+                        : null;
+
+                    return {
+                        ...shop,
+                        distanceKm,
+                    };
+                })
+                .filter((shop) => shop.distanceKm === null || shop.distanceKm <= maxDist)
+                .sort((a, b) => {
+                    if (a.distanceKm == null && b.distanceKm == null) return 0;
+                    if (a.distanceKm == null) return 1;
+                    if (b.distanceKm == null) return -1;
+                    return a.distanceKm - b.distanceKm;
+                });
+
+            return res.status(200).json({ success: true, count: rankedShops.length, shops: rankedShops });
+        }
+
+        const shopsWithoutDist = shops.map((shop) => ({
+            ...shop,
+            distanceKm: null,
+        }));
+
+        return res.status(200).json({ success: true, count: shopsWithoutDist.length, shops: shopsWithoutDist });
+    } catch (error) {
+        console.error('Failed to retrieve nearby shops:', error);
+        return res.status(500).json({ success: false, message: 'Unable to retrieve nearby shops' });
+    }
+};
+
 module.exports = {
     getMyShop,
     updateMyShop,
     getShopById,
     updateShopStatus,
+    getNearbyShops,
+    calculateHaversineDistanceKm,
 };

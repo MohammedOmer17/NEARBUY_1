@@ -26,6 +26,8 @@ const VALID_TYPES_BY_ROLE = {
     "ACCOUNT_SUSPENDED",
   ],
   captain: [
+    "NEW_DELIVERY_AVAILABLE",
+    "DELIVERY_OFFERED",
     "DELIVERY_ASSIGNED",
     "DELIVERY_CANCELLED",
     "ORDER_READY_FOR_PICKUP",
@@ -169,7 +171,8 @@ const getUserNotifications = async (userId, role, options = {}) => {
     Notification.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(limit),
+      .limit(limit)
+      .lean(),
     Notification.countDocuments(query),
   ]);
 
@@ -332,7 +335,7 @@ const notifyCustomerOrderStatusUpdate = async (order, status) => {
   }
 
   return createNotification({
-    recipient: order.customer,
+    recipient: order.customer?._id || order.customer,
     recipientRole: "customer",
     type: status === "placed"
       ? "ORDER_PLACED"
@@ -432,7 +435,7 @@ const notifyCaptainAssigned = async (order) => {
   }
 
   return createNotification({
-    recipient: order.captain,
+    recipient: order.captain?._id || order.captain,
     recipientRole: "captain",
     type: "DELIVERY_ASSIGNED",
     title: "New Delivery",
@@ -450,7 +453,7 @@ const notifyCaptainReadyForPickup = async (order) => {
   }
 
   return createNotification({
-    recipient: order.captain,
+    recipient: order.captain?._id || order.captain,
     recipientRole: "captain",
     type: "ORDER_READY_FOR_PICKUP",
     title: "Order Ready for Pickup",
@@ -468,11 +471,33 @@ const notifyCaptainDeliveryCancelled = async (order) => {
   }
 
   return createNotification({
-    recipient: order.captain,
+    recipient: order.captain?._id || order.captain,
     recipientRole: "captain",
     type: "DELIVERY_CANCELLED",
     title: "Delivery Cancelled",
     message: "The assigned delivery has been cancelled.",
+    relatedEntity: {
+      entityType: "Order",
+      entityId: order._id,
+    },
+  });
+};
+
+const notifyCaptainNewDeliveryAvailable = async (captainId, order, localitySummary = "") => {
+  if (!captainId || !order) {
+    return null;
+  }
+
+  const message = localitySummary
+    ? `New delivery order #${String(order._id).slice(-6).toUpperCase()} available near ${localitySummary}.`
+    : `New delivery order #${String(order._id).slice(-6).toUpperCase()} available in your service area.`;
+
+  return createNotification({
+    recipient: captainId,
+    recipientRole: "captain",
+    type: "NEW_DELIVERY_AVAILABLE",
+    title: "New Delivery Available",
+    message,
     relatedEntity: {
       entityType: "Order",
       entityId: order._id,
@@ -558,4 +583,5 @@ module.exports = {
   notifyCaptainAssigned,
   notifyCaptainReadyForPickup,
   notifyCaptainDeliveryCancelled,
+  notifyCaptainNewDeliveryAvailable,
 };

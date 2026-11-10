@@ -7,6 +7,12 @@ const shopProductSchema = new mongoose.Schema(
       ref: "Shop",
       required: [true, "Shop is required"],
     },
+    canonicalProduct: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CanonicalProduct",
+      default: null,
+      index: true,
+    },
     name: {
       type: String,
       required: [true, "Product name is required"],
@@ -47,7 +53,33 @@ const shopProductSchema = new mongoose.Schema(
       type: String,
       required: [true, "Unit is required"],
       trim: true,
-      enum: ["kg", "g", "ltr", "ml", "packet", "piece"],
+      enum: {
+        values: [
+          "kg",
+          "g",
+          "ltr",
+          "ml",
+          "packet",
+          "piece",
+          "box",
+          "1 kg",
+          "500 g",
+          "250 g",
+          "100 g",
+          "1 l",
+          "500 ml",
+          "1 packet",
+          "1 pc",
+          "1 piece",
+          "1 box",
+        ],
+        message: "Invalid unit: {VALUE}. Allowed units are kg, g, ltr, ml, packet, piece, box, or standard pack sizes.",
+      },
+    },
+    packSize: {
+      type: String,
+      trim: true,
+      default: "",
     },
     quantity: {
       type: Number,
@@ -67,6 +99,54 @@ const shopProductSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-shopProductSchema.index({ shop: 1 });
+const unitNormalizationMap = {
+  "1 packet": "packet",
+  packet: "packet",
+  packets: "packet",
+  pkt: "packet",
+  "1 pc": "piece",
+  "1 piece": "piece",
+  pc: "piece",
+  piece: "piece",
+  pieces: "piece",
+  "1 kg": "kg",
+  kg: "kg",
+  "500 g": "g",
+  "250 g": "g",
+  "100 g": "g",
+  g: "g",
+  gm: "g",
+  gram: "g",
+  grams: "g",
+  "1 l": "ltr",
+  "1 ltr": "ltr",
+  ltr: "ltr",
+  l: "ltr",
+  liter: "ltr",
+  litre: "ltr",
+  "500 ml": "ml",
+  ml: "ml",
+  "1 box": "piece",
+  box: "piece",
+};
+
+shopProductSchema.pre("validate", function () {
+  if (this.unit) {
+    const rawUnit = String(this.unit).trim().toLowerCase();
+    if (unitNormalizationMap[rawUnit]) {
+      if (!this.packSize && rawUnit !== unitNormalizationMap[rawUnit]) {
+        this.packSize = this.unit.trim();
+      }
+      this.unit = unitNormalizationMap[rawUnit];
+    }
+  }
+});
+
+shopProductSchema.index({ shop: 1, isAvailable: 1, createdAt: -1 });
+shopProductSchema.index({ shop: 1, category: 1 });
+shopProductSchema.index({ canonicalProduct: 1, isAvailable: 1, price: 1 });
+shopProductSchema.index({ isAvailable: 1, createdAt: -1 });
+shopProductSchema.index({ name: 1, unit: 1 });
 
 module.exports = mongoose.model("ShopProduct", shopProductSchema);
+

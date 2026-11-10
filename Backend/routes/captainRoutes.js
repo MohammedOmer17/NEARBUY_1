@@ -9,6 +9,10 @@ const {
   updateCaptainAvailability,
   getCaptainLocation,
   updateCaptainLocation,
+  getCaptainServiceAreas,
+  updateCaptainServiceAreas,
+  getAvailableDeliveries,
+  acceptDelivery,
   getCurrentDelivery,
   confirmArrivalAtShop,
   confirmPickup,
@@ -32,6 +36,12 @@ router.patch("/availability", authCaptain, updateCaptainAvailability);
 router.get("/location", authCaptain, getCaptainLocation);
 router.patch("/location", authCaptain, updateCaptainLocation);
 
+router.get("/service-areas", authCaptain, getCaptainServiceAreas);
+router.put("/service-areas", authCaptain, updateCaptainServiceAreas);
+
+router.get("/deliveries/available", authCaptain, getAvailableDeliveries);
+router.post("/deliveries/:orderId/accept", authCaptain, acceptDelivery);
+router.patch("/deliveries/:orderId/accept", authCaptain, acceptDelivery);
 router.get("/deliveries/current", authCaptain, getCurrentDelivery);
 router.patch("/deliveries/:orderId/arrived", authCaptain, confirmArrivalAtShop);
 router.patch("/deliveries/:orderId/pickup", authCaptain, confirmPickup);

@@ -142,15 +142,21 @@ const loginShopOwner = async (req, res) => {
             expiresIn: '1d',
         });
 
-        res.cookie('token', token, {
+        const cookieOpts = {
             httpOnly: true,
             sameSite: 'strict',
             secure: process.env.NODE_ENV === 'production',
-        });
+        };
+        res.cookie('token', token, cookieOpts);
+        res.cookie('owner_token', token, cookieOpts);
+
+        const shop = await Shop.findOne({ owner: shopOwner._id });
 
         return res.status(200).json({
             message: 'Login successful',
+            token,
             shopOwner: getSafeShopOwner(shopOwner),
+            shop,
         });
     } catch (error) {
         console.error('Shop Owner login failed:', error);
@@ -159,18 +165,20 @@ const loginShopOwner = async (req, res) => {
 };
 
 const logoutShopOwner = async (req, res) => {
-    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+    const token = req.cookies?.owner_token || req.cookies?.token || req.headers.authorization?.split(' ')[1];
+    const cookieOpts = {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+    };
 
     try {
         if (token) {
-            await BlacklistToken.create({ token });
+            await BlacklistToken.create({ token }).catch(() => {});
         }
 
-        res.clearCookie('token', {
-            httpOnly: true,
-            sameSite: 'strict',
-            secure: process.env.NODE_ENV === 'production',
-        });
+        res.clearCookie('token', cookieOpts);
+        res.clearCookie('owner_token', cookieOpts);
         return res.status(200).json({ message: 'Logout successful' });
     } catch (error) {
         console.error('Shop Owner logout failed:', error);
@@ -191,13 +199,10 @@ const getShopOwnerProfile = async (req, res) => {
         }
 
         const shop = await Shop.findOne({ owner: req.user._id });
-        if (!shop) {
-            return res.status(404).json({ message: 'Shop not found' });
-        }
 
         return res.status(200).json({
             shopOwner: getSafeShopOwner(shopOwner),
-            shop,
+            shop: shop || null,
         });
     } catch (error) {
         console.error('Shop Owner profile lookup failed:', error);

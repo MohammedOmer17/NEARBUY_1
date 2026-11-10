@@ -27,8 +27,12 @@ const getSocketToken = (socket) => {
     return tokenFromAuth;
   }
 
+  const role = socket.handshake?.auth?.role;
   const cookies = parseCookieHeader(socket.handshake?.headers?.cookie || "");
-  return cookies.token || null;
+  if (role === 'captain' && cookies.captain_token) return cookies.captain_token;
+  if (role === 'owner' && cookies.owner_token) return cookies.owner_token;
+  if (role === 'customer' && cookies.customer_token) return cookies.customer_token;
+  return cookies.captain_token || cookies.owner_token || cookies.customer_token || cookies.token || null;
 };
 
 const findUserByToken = async (token) => {
@@ -43,21 +47,35 @@ const findUserByToken = async (token) => {
     throw new Error("Invalid or expired token");
   }
 
-  if (!decoded || !decoded._id) {
+  const userId = decoded?._id || decoded?.id;
+  if (!userId) {
     throw new Error("Invalid authentication payload");
   }
 
-  const customer = await Customer.findById(decoded._id);
+  const role = decoded.role;
+  if (role === "customer") {
+    const customer = await Customer.findById(userId).select("_id").lean();
+    if (customer) return { id: customer._id.toString(), role: "customer" };
+  } else if (role === "shopOwner" || role === "owner") {
+    const shopOwner = await ShopOwner.findById(userId).select("_id").lean();
+    if (shopOwner) return { id: shopOwner._id.toString(), role: "shopOwner" };
+  } else if (role === "captain") {
+    const captain = await Captain.findById(userId).select("_id").lean();
+    if (captain) return { id: captain._id.toString(), role: "captain" };
+  }
+
+  // Fallback if role was omitted in legacy token
+  const customer = await Customer.findById(userId).select("_id").lean();
   if (customer) {
     return { id: customer._id.toString(), role: "customer" };
   }
 
-  const shopOwner = await ShopOwner.findById(decoded._id);
+  const shopOwner = await ShopOwner.findById(userId).select("_id").lean();
   if (shopOwner) {
     return { id: shopOwner._id.toString(), role: "shopOwner" };
   }
 
-  const captain = await Captain.findById(decoded._id);
+  const captain = await Captain.findById(userId).select("_id").lean();
   if (captain) {
     return { id: captain._id.toString(), role: "captain" };
   }
@@ -111,7 +129,7 @@ const validateOrderForUser = async (orderId, user) => {
     }
   }
 
-  if (!["picked_up", "out_for_delivery"].includes(order.orderStatus)) {
+  if (!["ready", "picked_up", "out_for_delivery"].includes(order.orderStatus)) {
     const error = new Error("Order is not in a trackable state");
     error.statusCode = 400;
     throw error;
@@ -128,6 +146,28 @@ const emitTrackingError = (socket, message, statusCode = 400) => {
   });
 };
 
+let ioInstance = null;
+
+const getIO = () => ioInstance;
+
+const emitToUser = (userId, event, payload) => {
+  if (ioInstance && userId) {
+    ioInstance.to(`user_${String(userId)}`).emit(event, payload);
+  }
+};
+
+const emitToRole = (role, event, payload) => {
+  if (ioInstance && role) {
+    ioInstance.to(`role_${String(role)}`).emit(event, payload);
+  }
+};
+
+const emitToOrder = (orderId, event, payload) => {
+  if (ioInstance && orderId) {
+    ioInstance.to(getRoomName(orderId)).emit(event, payload);
+  }
+};
+
 const initializeSocketService = (server) => {
   const socketIo = require("socket.io")(server, {
     cors: {
@@ -136,6 +176,8 @@ const initializeSocketService = (server) => {
       credentials: true,
     },
   });
+
+  ioInstance = socketIo;
 
   socketIo.use(async (socket, next) => {
     try {
@@ -149,6 +191,13 @@ const initializeSocketService = (server) => {
   });
 
   socketIo.on("connection", (socket) => {
+    if (socket.user?.id) {
+      socket.join(`user_${socket.user.id}`);
+      if (socket.user.role) {
+        socket.join(`role_${socket.user.role}`);
+      }
+    }
+
     socket.on("join_order_tracking", async ({ orderId }) => {
       try {
         const order = await validateOrderForUser(orderId, socket.user);
@@ -225,6 +274,12 @@ const initializeSocketService = (server) => {
         };
 
         socketIo.to(getRoomName(orderId)).emit("captain_location_updated", payload);
+        if (order.customer) {
+          emitToUser(order.customer._id || order.customer, "captain_location_updated", payload);
+        }
+        if (order.shop?.owner) {
+          emitToUser(order.shop.owner, "captain_location_updated", payload);
+        }
       } catch (error) {
         emitTrackingError(socket, error.message || "Unable to update captain location", error.statusCode || 400);
       }
@@ -242,4 +297,8 @@ module.exports = {
   initializeSocketService,
   getRoomName,
   validateOrderForUser,
+  getIO,
+  emitToUser,
+  emitToRole,
+  emitToOrder,
 };

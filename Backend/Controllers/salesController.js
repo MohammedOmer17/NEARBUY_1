@@ -1,19 +1,21 @@
 const Shop = require("../models/ShopModel");
 const Order = require("../models/Order");
 
-const allowedPeriods = ["daily", "weekly", "monthly"];
+const allowedPeriods = ["daily", "weekly", "monthly", "all"];
 
 const getOwnerShop = async (req, res) => {
   const ownerId = req.user?._id;
 
   if (!ownerId) {
-    return res.status(401).json({ message: "Authentication required" });
+    res.status(401).json({ message: "Authentication required" });
+    return null;
   }
 
   const shop = await Shop.findOne({ owner: ownerId });
 
   if (!shop) {
-    return res.status(404).json({ message: "Shop not found for this owner" });
+    res.status(404).json({ message: "Shop not found for this owner" });
+    return null;
   }
 
   return shop;
@@ -33,42 +35,73 @@ const parseDateValue = (value, label) => {
   return parsedDate;
 };
 
-const normalizeDateRange = (startDate, endDate, defaultRange = null) => {
-  let start = startDate ? parseDateValue(startDate, "startDate") : defaultRange?.start || null;
-  let end = endDate ? parseDateValue(endDate, "endDate") : defaultRange?.end || null;
+// Reusable expression: confirmed revenue orders are NOT cancelled AND are completed OR have confirmed payment
+const isConfirmedRevenueCond = {
+  $and: [
+    { $ne: ["$orderStatus", "cancelled"] },
+    {
+      $or: [
+        { $eq: ["$orderStatus", "completed"] },
+        { $eq: ["$payment.status", "paid"] },
+      ],
+    },
+  ],
+};
 
-  if (start && end && end < start) {
-    throw new Error("End date must be greater than or equal to start date");
+const resolvePeriodWindows = (period, startDate, endDate) => {
+  const now = new Date();
+  const p = (period || "").toLowerCase();
+
+  if (startDate || endDate) {
+    const currentStart = startDate ? parseDateValue(startDate, "startDate") : new Date(0);
+    const currentEnd = endDate ? parseDateValue(endDate, "endDate") : now;
+
+    if (currentEnd < currentStart) {
+      throw new Error("End date must be greater than or equal to start date");
+    }
+
+    const durationMs = currentEnd.getTime() - currentStart.getTime();
+    const prevEnd = new Date(currentStart.getTime() - 1);
+    const prevStart = new Date(currentStart.getTime() - durationMs);
+
+    return {
+      period: "custom",
+      current: { start: currentStart, end: currentEnd },
+      previous: { start: prevStart, end: prevEnd },
+    };
   }
 
-  if (start && !end) {
-    end = new Date();
-  }
+  let currentStart;
+  let currentEnd = now;
+  let prevStart = null;
+  let prevEnd = null;
 
-  if (!start && end) {
-    start = new Date(0);
+  if (p === "weekly") {
+    // 12-week window with previous 12-week comparison
+    currentStart = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
+    prevStart = new Date(now.getTime() - 24 * 7 * 24 * 60 * 60 * 1000);
+    prevEnd = currentStart;
+  } else if (p === "monthly") {
+    // 12-month window with previous 12-month comparison
+    currentStart = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+    prevStart = new Date(now.getFullYear(), now.getMonth() - 24, 1);
+    prevEnd = currentStart;
+  } else if (p === "all") {
+    currentStart = new Date(0);
+    prevStart = null;
+    prevEnd = null;
+  } else {
+    // Default: daily (30-day window with prior 30-day comparison)
+    currentStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    prevStart = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+    prevEnd = currentStart;
   }
 
   return {
-    start,
-    end,
+    period: p || "daily",
+    current: { start: currentStart, end: currentEnd },
+    previous: prevStart ? { start: prevStart, end: prevEnd } : null,
   };
-};
-
-const buildDateFilter = (startDate, endDate, defaultRange = null) => {
-  const dates = normalizeDateRange(startDate, endDate, defaultRange);
-
-  const filter = {};
-
-  if (dates.start) {
-    filter.$gte = dates.start;
-  }
-
-  if (dates.end) {
-    filter.$lte = dates.end;
-  }
-
-  return Object.keys(filter).length > 0 ? { createdAt: filter } : {};
 };
 
 const getSalesSummary = async (req, res) => {
@@ -79,52 +112,175 @@ const getSalesSummary = async (req, res) => {
       return;
     }
 
-    const dateFilter = buildDateFilter(req.query.startDate, req.query.endDate);
+    const windows = resolvePeriodWindows(req.query.period, req.query.startDate, req.query.endDate);
 
-    const [summary] = await Order.aggregate([
-      {
-        $match: {
-          shop: shop._id,
-          ...dateFilter,
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          totalOrders: { $sum: 1 },
-          completedOrders: {
-            $sum: {
-              $cond: [{ $eq: ["$orderStatus", "completed"] }, 1, 0],
-            },
-          },
-          cancelledOrders: {
-            $sum: {
-              $cond: [{ $eq: ["$orderStatus", "cancelled"] }, 1, 0],
-            },
-          },
-          totalSales: {
-            $sum: {
-              $cond: [{ $eq: ["$orderStatus", "completed"] }, "$totalAmount", 0],
-            },
+    const [currentData, previousData, allTimeData] = await Promise.all([
+      Order.aggregate([
+        {
+          $match: {
+            shop: shop._id,
+            createdAt: { $gte: windows.current.start, $lte: windows.current.end },
           },
         },
-      },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            completedOrders: {
+              $sum: {
+                $cond: [{ $eq: ["$orderStatus", "completed"] }, 1, 0],
+              },
+            },
+            confirmedOrders: {
+              $sum: {
+                $cond: [isConfirmedRevenueCond, 1, 0],
+              },
+            },
+            cancelledOrders: {
+              $sum: {
+                $cond: [{ $eq: ["$orderStatus", "cancelled"] }, 1, 0],
+              },
+            },
+            unpaidOrders: {
+              $sum: {
+                $cond: [
+                  {
+                    $and: [
+                      { $ne: ["$orderStatus", "cancelled"] },
+                      { $ne: ["$orderStatus", "completed"] },
+                      { $ne: ["$payment.status", "paid"] },
+                    ],
+                  },
+                  1,
+                  0,
+                ],
+              },
+            },
+            totalSales: {
+              $sum: {
+                $cond: [isConfirmedRevenueCond, "$totalAmount", 0],
+              },
+            },
+          },
+        },
+      ]),
+      windows.previous
+        ? Order.aggregate([
+            {
+              $match: {
+                shop: shop._id,
+                createdAt: { $gte: windows.previous.start, $lte: windows.previous.end },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                totalOrders: { $sum: 1 },
+                confirmedOrders: {
+                  $sum: {
+                    $cond: [isConfirmedRevenueCond, 1, 0],
+                  },
+                },
+                totalSales: {
+                  $sum: {
+                    $cond: [isConfirmedRevenueCond, "$totalAmount", 0],
+                  },
+                },
+              },
+            },
+          ])
+        : Promise.resolve([]),
+      Order.aggregate([
+        {
+          $match: {
+            shop: shop._id,
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            totalOrders: { $sum: 1 },
+            confirmedOrders: {
+              $sum: {
+                $cond: [isConfirmedRevenueCond, 1, 0],
+              },
+            },
+            totalSales: {
+              $sum: {
+                $cond: [isConfirmedRevenueCond, "$totalAmount", 0],
+              },
+            },
+          },
+        },
+      ]),
     ]);
 
-    const totalOrders = summary?.totalOrders || 0;
-    const completedOrders = summary?.completedOrders || 0;
-    const cancelledOrders = summary?.cancelledOrders || 0;
-    const totalSales = Number(summary?.totalSales || 0);
-    const averageOrderValue = completedOrders > 0 ? Number((totalSales / completedOrders).toFixed(2)) : 0;
+    const cur = currentData[0] || {
+      totalOrders: 0,
+      completedOrders: 0,
+      confirmedOrders: 0,
+      cancelledOrders: 0,
+      unpaidOrders: 0,
+      totalSales: 0,
+    };
+
+    const prev = previousData[0] || {
+      totalOrders: 0,
+      confirmedOrders: 0,
+      totalSales: 0,
+    };
+
+    const allTime = allTimeData[0] || {
+      totalOrders: 0,
+      confirmedOrders: 0,
+      totalSales: 0,
+    };
+
+    const totalOrders = cur.totalOrders || 0;
+    const completedOrders = cur.completedOrders || 0;
+    const confirmedOrders = cur.confirmedOrders || 0;
+    const cancelledOrders = cur.cancelledOrders || 0;
+    const unpaidOrders = cur.unpaidOrders || 0;
+    const totalSales = Number(cur.totalSales || 0);
+
+    const previousPeriodSales = Number(prev.totalSales || 0);
+    const previousPeriodOrders = prev.confirmedOrders || 0;
+
+    let salesGrowthPercent = 0;
+    if (previousPeriodSales > 0) {
+      salesGrowthPercent = Number((((totalSales - previousPeriodSales) / previousPeriodSales) * 100).toFixed(1));
+    } else if (totalSales > 0) {
+      salesGrowthPercent = 100;
+    }
+
+    let orderGrowthPercent = 0;
+    if (previousPeriodOrders > 0) {
+      orderGrowthPercent = Number((((confirmedOrders - previousPeriodOrders) / previousPeriodOrders) * 100).toFixed(1));
+    } else if (confirmedOrders > 0) {
+      orderGrowthPercent = 100;
+    }
+
+    const averageOrderValue = confirmedOrders > 0 ? Number((totalSales / confirmedOrders).toFixed(2)) : 0;
 
     return res.status(200).json({
       success: true,
+      period: windows.period,
       summary: {
         totalSales,
         totalOrders,
+        confirmedOrders,
         completedOrders,
         cancelledOrders,
+        unpaidOrders,
         averageOrderValue,
+        previousPeriodSales,
+        previousPeriodOrders,
+        salesGrowthPercent,
+        orderGrowthPercent,
+        lifetimeSales: Number(allTime.totalSales || 0),
+        lifetimeOrders: allTime.totalOrders || 0,
+        isDevelopmentData: true,
+        historicalStatus: prev.totalOrders > 0 ? "sufficient" : "insufficient",
       },
     });
   } catch (error) {
@@ -146,88 +302,168 @@ const getSalesStatistics = async (req, res) => {
       return;
     }
 
-    const dateFilter = buildDateFilter(req.query.startDate, req.query.endDate);
+    const windows = resolvePeriodWindows(req.query.period, req.query.startDate, req.query.endDate);
 
-    const [stats] = await Order.aggregate([
-      {
-        $match: {
-          shop: shop._id,
-          ...dateFilter,
+    const [stats, prevStats] = await Promise.all([
+      Order.aggregate([
+        {
+          $match: {
+            shop: shop._id,
+            createdAt: { $gte: windows.current.start, $lte: windows.current.end },
+          },
         },
-      },
-      {
-        $facet: {
-          overview: [
+        {
+          $facet: {
+            overview: [
+              {
+                $group: {
+                  _id: null,
+                  totalOrders: { $sum: 1 },
+                  completedOrders: {
+                    $sum: {
+                      $cond: [{ $eq: ["$orderStatus", "completed"] }, 1, 0],
+                    },
+                  },
+                  confirmedOrders: {
+                    $sum: {
+                      $cond: [isConfirmedRevenueCond, 1, 0],
+                    },
+                  },
+                  cancelledOrders: {
+                    $sum: {
+                      $cond: [{ $eq: ["$orderStatus", "cancelled"] }, 1, 0],
+                    },
+                  },
+                  unpaidOrders: {
+                    $sum: {
+                      $cond: [
+                        {
+                          $and: [
+                            { $ne: ["$orderStatus", "cancelled"] },
+                            { $ne: ["$orderStatus", "completed"] },
+                            { $ne: ["$payment.status", "paid"] },
+                          ],
+                        },
+                        1,
+                        0,
+                      ],
+                    },
+                  },
+                  totalSales: {
+                    $sum: {
+                      $cond: [isConfirmedRevenueCond, "$totalAmount", 0],
+                    },
+                  },
+                  pickupOrders: {
+                    $sum: {
+                      $cond: [{ $eq: ["$fulfillmentType", "pickup"] }, 1, 0],
+                    },
+                  },
+                  deliveryOrders: {
+                    $sum: {
+                      $cond: [{ $eq: ["$fulfillmentType", "delivery"] }, 1, 0],
+                    },
+                  },
+                },
+              },
+            ],
+            itemSummary: [
+              {
+                $match: {
+                  orderStatus: { $ne: "cancelled" },
+                  $or: [
+                    { orderStatus: "completed" },
+                    { "payment.status": "paid" },
+                  ],
+                },
+              },
+              { $unwind: "$items" },
+              {
+                $group: {
+                  _id: null,
+                  totalItemsSold: { $sum: "$items.quantity" },
+                },
+              },
+            ],
+          },
+        },
+      ]),
+      windows.previous
+        ? Order.aggregate([
+            {
+              $match: {
+                shop: shop._id,
+                createdAt: { $gte: windows.previous.start, $lte: windows.previous.end },
+              },
+            },
             {
               $group: {
                 _id: null,
                 totalOrders: { $sum: 1 },
-                completedOrders: {
+                confirmedOrders: {
                   $sum: {
-                    $cond: [{ $eq: ["$orderStatus", "completed"] }, 1, 0],
-                  },
-                },
-                cancelledOrders: {
-                  $sum: {
-                    $cond: [{ $eq: ["$orderStatus", "cancelled"] }, 1, 0],
+                    $cond: [isConfirmedRevenueCond, 1, 0],
                   },
                 },
                 totalSales: {
                   $sum: {
-                    $cond: [{ $eq: ["$orderStatus", "completed"] }, "$totalAmount", 0],
-                  },
-                },
-                pickupOrders: {
-                  $sum: {
-                    $cond: [{ $eq: ["$fulfillmentType", "pickup"] }, 1, 0],
-                  },
-                },
-                deliveryOrders: {
-                  $sum: {
-                    $cond: [{ $eq: ["$fulfillmentType", "delivery"] }, 1, 0],
+                    $cond: [isConfirmedRevenueCond, "$totalAmount", 0],
                   },
                 },
               },
             },
-          ],
-          itemSummary: [
-            { $match: { orderStatus: "completed" } },
-            { $unwind: "$items" },
-            {
-              $group: {
-                _id: null,
-                totalItemsSold: { $sum: "$items.quantity" },
-              },
-            },
-          ],
-        },
-      },
+          ])
+        : Promise.resolve([]),
     ]);
 
-    const overview = stats?.overview?.[0] || {
+    const overview = stats?.[0]?.overview?.[0] || {
       totalOrders: 0,
       completedOrders: 0,
+      confirmedOrders: 0,
       cancelledOrders: 0,
+      unpaidOrders: 0,
       totalSales: 0,
       pickupOrders: 0,
       deliveryOrders: 0,
     };
 
-    const itemSummary = stats?.itemSummary?.[0] || { totalItemsSold: 0 };
+    const prevOverview = prevStats?.[0] || {
+      totalOrders: 0,
+      confirmedOrders: 0,
+      totalSales: 0,
+    };
+
+    const itemSummary = stats?.[0]?.itemSummary?.[0] || { totalItemsSold: 0 };
     const totalSales = Number(overview.totalSales || 0);
+    const confirmedOrders = overview.confirmedOrders || 0;
     const completedOrders = overview.completedOrders || 0;
+    const previousPeriodSales = Number(prevOverview.totalSales || 0);
+
+    let salesGrowthPercent = 0;
+    if (previousPeriodSales > 0) {
+      salesGrowthPercent = Number((((totalSales - previousPeriodSales) / previousPeriodSales) * 100).toFixed(1));
+    } else if (totalSales > 0) {
+      salesGrowthPercent = 100;
+    }
 
     return res.status(200).json({
       success: true,
+      period: windows.period,
       statistics: {
         totalOrders: overview.totalOrders || 0,
+        confirmedOrders,
         completedOrders,
         cancelledOrders: overview.cancelledOrders || 0,
+        unpaidOrders: overview.unpaidOrders || 0,
         totalSales,
-        averageOrderValue: completedOrders > 0 ? Number((totalSales / completedOrders).toFixed(2)) : 0,
+        previousPeriodSales,
+        salesGrowthPercent,
+        averageOrderValue: confirmedOrders > 0 ? Number((totalSales / confirmedOrders).toFixed(2)) : 0,
         totalItemsSold: itemSummary.totalItemsSold || 0,
         pickupOrders: overview.pickupOrders || 0,
         deliveryOrders: overview.deliveryOrders || 0,
+        isDevelopmentData: true,
+        historicalStatus: prevOverview.totalOrders > 0 ? "sufficient" : "insufficient",
       },
     });
   } catch (error) {
@@ -252,41 +488,10 @@ const getSalesTrends = async (req, res) => {
     const period = (req.query.period || "daily").toLowerCase();
 
     if (!allowedPeriods.includes(period)) {
-      return res.status(400).json({ message: "Invalid period. Use daily, weekly, or monthly." });
+      return res.status(400).json({ message: "Invalid period. Use daily, weekly, monthly, or all." });
     }
 
-    let startDate = req.query.startDate ? parseDateValue(req.query.startDate, "startDate") : null;
-    let endDate = req.query.endDate ? parseDateValue(req.query.endDate, "endDate") : null;
-
-    if (startDate && endDate && endDate < startDate) {
-      return res.status(400).json({ message: "End date must be greater than or equal to start date" });
-    }
-
-    if (!startDate && !endDate) {
-      const now = new Date();
-
-      if (period === "daily") {
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      }
-
-      if (period === "weekly") {
-        startDate = new Date(now.getTime() - 12 * 7 * 24 * 60 * 60 * 1000);
-      }
-
-      if (period === "monthly") {
-        startDate = new Date(now.getFullYear(), now.getMonth() - 12, 1);
-      }
-
-      endDate = now;
-    }
-
-    if (startDate && !endDate) {
-      endDate = new Date();
-    }
-
-    if (!startDate && endDate) {
-      startDate = new Date(0);
-    }
+    const windows = resolvePeriodWindows(period, req.query.startDate, req.query.endDate);
 
     const groupExpression =
       period === "daily"
@@ -300,10 +505,14 @@ const getSalesTrends = async (req, res) => {
         $match: {
           shop: shop._id,
           createdAt: {
-            $gte: startDate,
-            $lte: endDate,
+            $gte: windows.current.start,
+            $lte: windows.current.end,
           },
-          orderStatus: "completed",
+          orderStatus: { $ne: "cancelled" },
+          $or: [
+            { orderStatus: "completed" },
+            { "payment.status": "paid" },
+          ],
         },
       },
       {
@@ -329,6 +538,8 @@ const getSalesTrends = async (req, res) => {
     return res.status(200).json({
       success: true,
       period,
+      startDate: windows.current.start,
+      endDate: windows.current.end,
       data,
     });
   } catch (error) {
@@ -350,7 +561,7 @@ const getTopSellingProducts = async (req, res) => {
       return;
     }
 
-    const dateFilter = buildDateFilter(req.query.startDate, req.query.endDate);
+    const windows = resolvePeriodWindows(req.query.period, req.query.startDate, req.query.endDate);
     const rawLimit = Number(req.query.limit ?? 5);
     const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.floor(rawLimit) : 5;
 
@@ -358,8 +569,15 @@ const getTopSellingProducts = async (req, res) => {
       {
         $match: {
           shop: shop._id,
-          orderStatus: "completed",
-          ...dateFilter,
+          createdAt: {
+            $gte: windows.current.start,
+            $lte: windows.current.end,
+          },
+          orderStatus: { $ne: "cancelled" },
+          $or: [
+            { orderStatus: "completed" },
+            { "payment.status": "paid" },
+          ],
         },
       },
       { $unwind: "$items" },
@@ -388,6 +606,7 @@ const getTopSellingProducts = async (req, res) => {
 
     return res.status(200).json({
       success: true,
+      period: windows.period,
       products,
     });
   } catch (error) {

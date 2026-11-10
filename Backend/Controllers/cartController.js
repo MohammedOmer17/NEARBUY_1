@@ -18,7 +18,10 @@ const getCart = async (req, res) => {
   try {
     const cart = await getCustomerCart(req.user._id);
 
-    if (!cart) {
+    if (!cart || !cart.items || cart.items.length === 0) {
+      if (cart) {
+        await Cart.deleteOne({ _id: cart._id }).catch(() => {});
+      }
       return res.status(200).json({ cart: null, items: [] });
     }
 
@@ -67,7 +70,14 @@ const addToCart = async (req, res) => {
       });
     }
 
-    if (cart.shop && cart.shop.toString() !== product.shop.toString()) {
+    // Only enforce one-shop-per-cart if cart actually has items from another shop.
+    // If cart has 0 items, it adopts the new shop cleanly.
+    if (
+      cart.items &&
+      cart.items.length > 0 &&
+      cart.shop &&
+      cart.shop.toString() !== product.shop.toString()
+    ) {
       return res.status(400).json({
         message: "Cart already contains products from another shop. Please clear the cart before adding items from a different shop.",
       });
@@ -116,8 +126,8 @@ const updateCartItem = async (req, res) => {
 
   const updatedQuantity = Number(quantity);
 
-  if (!Number.isFinite(updatedQuantity) || updatedQuantity < 1) {
-    return res.status(400).json({ message: "Quantity must be a positive number" });
+  if (!Number.isFinite(updatedQuantity)) {
+    return res.status(400).json({ message: "Quantity must be a valid number" });
   }
 
   try {
@@ -127,10 +137,20 @@ const updateCartItem = async (req, res) => {
       return res.status(404).json({ message: "Cart not found" });
     }
 
-    const item = cart.items.find((cartItem) => cartItem.product.toString() === productId);
+    const itemIndex = cart.items.findIndex((cartItem) => cartItem.product.toString() === productId);
 
-    if (!item) {
+    if (itemIndex === -1) {
       return res.status(404).json({ message: "Product not found in cart" });
+    }
+
+    if (updatedQuantity <= 0) {
+      cart.items.splice(itemIndex, 1);
+      if (cart.items.length === 0) {
+        await Cart.deleteOne({ _id: cart._id });
+        return res.status(200).json({ message: "Product removed from cart", cart: null });
+      }
+      await cart.save();
+      return res.status(200).json({ message: "Cart item updated successfully", cart });
     }
 
     const product = await ShopProduct.findById(productId);
@@ -143,10 +163,10 @@ const updateCartItem = async (req, res) => {
       return res.status(400).json({ message: "Quantity exceeds available stock" });
     }
 
-    item.quantity = updatedQuantity;
-    item.name = product.name;
-    item.unit = product.unit;
-    item.price = product.price;
+    cart.items[itemIndex].quantity = updatedQuantity;
+    cart.items[itemIndex].name = product.name;
+    cart.items[itemIndex].unit = product.unit;
+    cart.items[itemIndex].price = product.price;
 
     await cart.save();
 
@@ -180,7 +200,8 @@ const removeFromCart = async (req, res) => {
     cart.items.splice(itemIndex, 1);
 
     if (cart.items.length === 0) {
-      cart.shop = cart.shop;
+      await Cart.deleteOne({ _id: cart._id });
+      return res.status(200).json({ message: "Product removed from cart", cart: null });
     }
 
     await cart.save();
@@ -194,18 +215,14 @@ const removeFromCart = async (req, res) => {
 
 const clearCart = async (req, res) => {
   try {
-    const result = await Cart.deleteOne({ customer: req.user._id });
-
-    if (result.deletedCount === 0) {
-      return res.status(404).json({ message: "Cart not found" });
-    }
-
+    await Cart.deleteMany({ customer: req.user._id });
     return res.status(200).json({ message: "Cart cleared successfully" });
   } catch (error) {
     console.error("Clear cart failed:", error);
     return res.status(500).json({ message: "Unable to clear cart" });
   }
 };
+
 
 module.exports = {
   getCart,

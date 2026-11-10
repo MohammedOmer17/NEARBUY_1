@@ -5,38 +5,40 @@ const ShopOwner = require('../models/ShopOwnerModel');
 const Captain = require('../models/CaptainModel');
 
 module.exports.authCustomer = async (req, res, next) => {
-
     const token =
+        req.cookies?.customer_token ||
+        req.headers['x-customer-token'] ||
+        (req.headers['x-role'] === 'customer' ? req.headers.authorization?.split(' ')[1] : null) ||
         req.cookies?.token ||
         req.headers.authorization?.split(' ')[1];
 
-    // Check if token exists
     if (!token) {
         return res.status(401).json({
             message: 'Unauthorized'
         });
     }
 
-    // Check if token is blacklisted
-    const isBlacklisted = await blackListTokenModel.findOne({
-        token: token
-    });
-
-    if (isBlacklisted) {
-        return res.status(401).json({
-            message: 'Unauthorized'
-        });
-    }
-
     try {
+        const isBlacklisted = await blackListTokenModel.exists({
+            token: token
+        });
 
-        // Verify token
+        if (isBlacklisted) {
+            return res.status(401).json({
+                message: 'Unauthorized'
+            });
+        }
+
         const decoded = jwt.verify(
             token,
             process.env.JWT_SECRET
         );
 
-        const customer = await CustomerModel.findById(decoded._id);
+        if (decoded.role && decoded.role !== 'customer') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const customer = await CustomerModel.findById(decoded._id || decoded.id);
 
         if (!customer) {
             return res.status(401).json({ message: 'Unauthorized' });
@@ -45,11 +47,8 @@ module.exports.authCustomer = async (req, res, next) => {
         req.customer = customer;
         req.user = customer;
 
-        // Continue to the next middleware/controller
         next();
-
     } catch (err) {
-
         return res.status(401).json({
             message: 'Unauthorized'
         });
@@ -57,7 +56,12 @@ module.exports.authCustomer = async (req, res, next) => {
 };
 
 module.exports.authShopOwner = async (req, res, next) => {
-    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+    const token =
+        req.cookies?.owner_token ||
+        req.headers['x-owner-token'] ||
+        (req.headers['x-role'] === 'owner' ? req.headers.authorization?.split(' ')[1] : null) ||
+        req.cookies?.token ||
+        req.headers.authorization?.split(' ')[1];
 
     if (!token) {
         return res.status(401).json({ message: 'Authentication required' });
@@ -76,7 +80,11 @@ module.exports.authShopOwner = async (req, res, next) => {
             return res.status(401).json({ message: 'Token has been revoked' });
         }
 
-        const shopOwner = await ShopOwner.findById(decoded._id);
+        if (decoded.role && decoded.role !== 'shopOwner') {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const shopOwner = await ShopOwner.findById(decoded._id || decoded.id);
         if (!shopOwner) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
@@ -89,7 +97,12 @@ module.exports.authShopOwner = async (req, res, next) => {
 };
 
 module.exports.authCaptain = async (req, res, next) => {
-    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+    const token =
+        req.cookies?.captain_token ||
+        req.headers['x-captain-token'] ||
+        (req.headers['x-role'] === 'captain' ? req.headers.authorization?.split(' ')[1] : null) ||
+        req.cookies?.token ||
+        req.headers.authorization?.split(' ')[1];
 
     if (!token) {
         return res.status(401).json({ success: false, message: 'Authentication required' });
@@ -130,48 +143,59 @@ module.exports.authCaptain = async (req, res, next) => {
 };
 
 module.exports.authAnyUser = async (req, res, next) => {
-    const token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+    const candidates = [
+        req.cookies?.customer_token,
+        req.cookies?.owner_token,
+        req.cookies?.captain_token,
+        req.headers['x-customer-token'],
+        req.headers['x-owner-token'],
+        req.headers['x-captain-token'],
+        req.cookies?.token,
+        req.headers.authorization?.split(' ')[1],
+    ].filter(Boolean);
 
-    if (!token) {
+    if (candidates.length === 0) {
         return res.status(401).json({ success: false, message: 'Authentication required' });
     }
 
-    let decoded;
-    try {
-        decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (error) {
-        return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    for (const token of candidates) {
+        let decoded;
+        try {
+            decoded = jwt.verify(token, process.env.JWT_SECRET);
+        } catch {
+            continue;
+        }
+
+        try {
+            const isBlacklisted = await blackListTokenModel.exists({ token });
+            if (isBlacklisted) continue;
+
+            const customer = await CustomerModel.findById(decoded._id || decoded.id);
+            if (customer) {
+                req.user = customer;
+                req.customer = customer;
+                req.userRole = 'customer';
+                return next();
+            }
+
+            const shopOwner = await ShopOwner.findById(decoded._id || decoded.id);
+            if (shopOwner) {
+                req.user = shopOwner;
+                req.userRole = 'shopOwner';
+                return next();
+            }
+
+            const captain = await Captain.findById(decoded._id || decoded.id);
+            if (captain) {
+                req.user = captain;
+                req.captain = captain;
+                req.userRole = 'captain';
+                return next();
+            }
+        } catch {
+            continue;
+        }
     }
 
-    try {
-        const isBlacklisted = await blackListTokenModel.exists({ token });
-        if (isBlacklisted) {
-            return res.status(401).json({ success: false, message: 'Token has been revoked' });
-        }
-
-        const customer = await CustomerModel.findById(decoded._id || decoded.id);
-        if (customer) {
-            req.user = customer;
-            req.userRole = 'customer';
-            return next();
-        }
-
-        const shopOwner = await ShopOwner.findById(decoded._id || decoded.id);
-        if (shopOwner) {
-            req.user = shopOwner;
-            req.userRole = 'shopOwner';
-            return next();
-        }
-
-        const captain = await Captain.findById(decoded._id || decoded.id);
-        if (captain) {
-            req.user = captain;
-            req.userRole = 'captain';
-            return next();
-        }
-
-        return res.status(401).json({ success: false, message: 'Unauthorized' });
-    } catch (error) {
-        return next(error);
-    }
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
 };

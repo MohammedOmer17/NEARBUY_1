@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const customerRoutes = require("./routes/CustomerRoutes");
 const shopOwnerRoutes = require("./routes/shopOwnerRoutes");
 const shopProductRoutes = require("./routes/shopProductRoutes");
+const shopRoutes = require("./routes/shopRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const captainRoutes = require("./routes/captainRoutes");
@@ -12,19 +13,25 @@ const googleMapsRoutes = require("./routes/googleMapsRoutes");
 const assessmentRoutes = require("./routes/assessmentRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const salesRoutes = require("./routes/salesRoutes");
 
-app.use(cors());
+const compressionMiddleware = require("./Middlewares/compressionMiddleware");
+
+app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 app.use(express.json());
+app.use(compressionMiddleware());
 app.use("/User", customerRoutes);
 app.use("/shop-owner", shopOwnerRoutes);
 app.use("/", shopProductRoutes);
-app.use("/", cartRoutes);
 app.use("/", orderRoutes);
+app.use("/", cartRoutes);
+app.use("/", shopRoutes);
 app.use("/captain", captainRoutes);
 app.use("/maps", googleMapsRoutes);
 app.use("/assessment", assessmentRoutes);
 app.use("/notifications", notificationRoutes);
 app.use("/admin", adminRoutes);
+app.use("/sales", salesRoutes);
 
 module.exports = app;

@@ -118,4 +118,12 @@ const orderSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+orderSchema.index({ customer: 1, createdAt: -1 });
+orderSchema.index({ shop: 1, createdAt: -1 });
+orderSchema.index({ shop: 1, orderStatus: 1, createdAt: -1 });
+orderSchema.index({ captain: 1, createdAt: -1 });
+orderSchema.index({ captain: 1, orderStatus: 1 });
+orderSchema.index({ fulfillmentType: 1, orderStatus: 1, captain: 1, createdAt: -1 });
+orderSchema.index({ createdAt: -1 });
+
 module.exports = mongoose.model("Order", orderSchema);
