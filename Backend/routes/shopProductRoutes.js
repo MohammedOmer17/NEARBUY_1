@@ -7,11 +7,11 @@ const {
   updateProduct,
   deleteProduct,
   updateProductStock,
-} = require("../controllers/shopProductController");
+} = require("../Controllers/shopProductController");
 const {
   getProductSuggestions,
   getCanonicalProductById,
-} = require("../controllers/canonicalProductController");
+} = require("../Controllers/canonicalProductController");
 const { authShopOwner, authCustomer } = require("../Middlewares/authMiddleware");
 
 const router = express.Router();
