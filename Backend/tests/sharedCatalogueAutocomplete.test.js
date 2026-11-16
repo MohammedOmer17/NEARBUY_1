@@ -83,9 +83,46 @@ async function runTests() {
   assert.ok(caseRes.data.suggestions.length > 0, "Case and whitespace variations must resolve canonical product");
   const eggProduct = caseRes.data.suggestions.find((p) => /egg/i.test(p.name));
   assert.ok(eggProduct, "Eggs item found for query '  EGGS  '");
+  const capitalizationResults = await Promise.all(["Eggs", "eggs", "EGGS"].map((q) =>
+    httpRequest({
+      hostname: "localhost",
+      port: 3000,
+      path: `/shop-products/suggestions?q=${encodeURIComponent(q)}`,
+      method: "GET",
+    })
+  ));
+  for (const result of capitalizationResults) {
+    assert.equal(result.status, 200);
+    assert.ok(
+      result.data.suggestions.some((product) => product.canonicalProductId === eggProduct.canonicalProductId),
+      "Capitalization variants must resolve to the same canonical egg product"
+    );
+  }
+  assert.equal(eggProduct.image, "/images/product-placeholder.svg", "Unverified images must use the local placeholder");
   console.log(`✓ Capitalization & whitespace tolerance: "  EGGS  " matched "${eggProduct.name}"`);
 
-  // 1d: Fuzzy spelling tolerance: "frotune" -> "Fortune"
+  // 1d: Alias and package-size matching
+  const aliasRes = await httpRequest({
+    hostname: "localhost",
+    port: 3000,
+    path: "/shop-products/suggestions?q=chawal",
+    method: "GET",
+  });
+  assert.ok(aliasRes.data.suggestions.some((p) => /rice|chawal/i.test(p.name)), "Rice aliases should match");
+
+  const packRes = await httpRequest({
+    hostname: "localhost",
+    port: 3000,
+    path: `/shop-products/suggestions?q=${encodeURIComponent("Aashirvaad Shudh Chakki Atta")}`,
+    method: "GET",
+  });
+  const attaPackSizes = new Set(packRes.data.suggestions.map((p) => p.packSize).filter(Boolean));
+  const attaCanonicalIds = new Set(packRes.data.suggestions.map((p) => p.canonicalProductId));
+  assert.ok(attaPackSizes.size > 1, "Different package sizes must remain separate suggestions");
+  assert.ok(attaCanonicalIds.size > 1, "Different package sizes must retain different canonical product IDs");
+  console.log("✓ Alias lookup and package-size variants remain distinct");
+
+  // 1e: Fuzzy spelling tolerance: "frotune" -> "Fortune"
   const fuzzyRes = await httpRequest({
     hostname: "localhost",
     port: 3000,
@@ -180,7 +217,35 @@ async function runTests() {
   const createdShopProduct = createNewRes.data.product;
   assert.ok(createdShopProduct._id, "Created shop product must have _id");
   assert.ok(createdShopProduct.canonicalProduct, "Created shop product must link to canonical product");
+  assert.equal(createdShopProduct.canonicalProduct.unit, "g", "Catalogue measurements use normalized units");
+  assert.equal(createdShopProduct.canonicalProduct.packSize, "500g Jar", "Catalogue package size is preserved");
+  assert.equal(createdShopProduct.image, "/images/product-placeholder.svg", "New products without a verified image use the local placeholder");
   console.log(`✓ Genuinely new product "${createdShopProduct.name}" created and linked to canonical ID: ${createdShopProduct.canonicalProduct._id || createdShopProduct.canonicalProduct}`);
+
+  const duplicateNewRes = await httpRequest(
+    {
+      hostname: "localhost",
+      port: 3000,
+      path: "/shop-products",
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ownerToken}`,
+        Cookie: ownerCookie,
+      },
+    },
+    {
+      name: newProductName,
+      category: "Grocery & Kirana",
+      brand: "Himalayan Organics",
+      price: 349,
+      unit: "g",
+      packSize: "500 g Jar",
+      quantity: 25,
+    }
+  );
+  assert.equal(duplicateNewRes.status, 409, "Repeated submissions must not create duplicate shop listings");
+  console.log("✓ Duplicate submission rejected without adding another shop listing");
 
   // --------------------------------------------------------------------------
   // TEST 4: Immediate Availability in Suggestions for Other Shops
@@ -190,13 +255,37 @@ async function runTests() {
   const instantSuggestRes = await httpRequest({
     hostname: "localhost",
     port: 3000,
-    path: `/shop-products/suggestions?q=Forest%20Honey`,
+    path: `/shop-products/suggestions?q=${encodeURIComponent(newProductName)}`,
     method: "GET",
   });
   assert.equal(instantSuggestRes.status, 200);
   const foundInstant = instantSuggestRes.data.suggestions.find((p) => p.name.includes(newProductName));
   assert.ok(foundInstant, "Newly created canonical product must be immediately searchable across all shops");
   console.log(`✓ Newly created product immediately searchable: found "${foundInstant.name}" with brand "${foundInstant.brand}"`);
+
+  const secondOwnerLogin = await httpRequest(
+    {
+      hostname: "localhost",
+      port: 3000,
+      path: "/shop-owner/login",
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    },
+    { email: "murad.owner02@nearbuy.test", password: "NearBuy@Demo2025!" }
+  );
+  assert.equal(secondOwnerLogin.status, 200, "A second shop owner should authenticate successfully");
+  const secondOwnerSuggest = await httpRequest({
+    hostname: "localhost",
+    port: 3000,
+    path: `/shop-products/suggestions?q=${encodeURIComponent(newProductName)}`,
+    method: "GET",
+    headers: { Authorization: `Bearer ${secondOwnerLogin.data.token}` },
+  });
+  assert.ok(
+    secondOwnerSuggest.data.suggestions.some((p) => p.canonicalProductId === foundInstant.canonicalProductId),
+    "A different shop owner must see the newly added shared product"
+  );
+  console.log("✓ Second shop owner sees the same shared catalogue product");
 
   // --------------------------------------------------------------------------
   // TEST 5: Customer Discovery & Multi-Shop Offers Comparison
@@ -223,6 +312,21 @@ async function runTests() {
   assert.ok(offer.shop.shopName, "Offer must display shop name");
   assert.ok(offer.isAvailable, "Offer must reflect inventory availability");
   console.log(`✓ Customer offers verified: "${offersRes.data.product.name}" offered by ${offer.shop.shopName} at ₹${offer.price} (${offer.unit})`);
+
+  // Cleanup test-created product so it does not persist in the database
+  try {
+    const ShopProduct = require("../models/ShopProduct");
+    const { CanonicalProduct } = require("../models/CanonicalProduct");
+    if (createdShopProduct?._id) {
+      await ShopProduct.deleteOne({ _id: createdShopProduct._id });
+      const canonId = createdShopProduct.canonicalProduct?._id || createdShopProduct.canonicalProduct;
+      if (canonId) {
+        await CanonicalProduct.deleteOne({ _id: canonId });
+      }
+    }
+  } catch (cleanErr) {
+    // Ignore cleanup error
+  }
 
   console.log("\n============================================================");
   console.log("ALL SHARED PRODUCT CATALOGUE & AUTOCOMPLETE TESTS PASSED!");

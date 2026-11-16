@@ -987,3 +987,17 @@ node scripts/verifySeedData.js
 - **118 Distinct FMCG Products:** Across 12 grocery categories with realistic INR prices.
 - **Cross-Shop Comparisons:** 80+ products available across 8 to 10 shops with moderate price variations (1% to 5%) to support multi-shop price comparison.
 - Full details are documented in `scripts/README.md`.
+
+### Shared Product Catalogue
+
+The shared runtime catalogue is imported from `data/productCatalog.json` into MongoDB. Shop listings reference the same canonical record while keeping price, quantity, availability, and shop identity per listing.
+
+```bash
+# Idempotently import/update the 128 curated catalogue records
+npm run seed:catalog
+
+# Import the catalogue and link exact-identity legacy shop listings
+npm run migrate:catalog
+```
+
+Unverified legacy image mappings were replaced with the local `/images/product-placeholder.svg` asset. Add product photography only after verifying that it depicts the matching product and documenting its source/license.

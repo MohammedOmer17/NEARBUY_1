@@ -93,15 +93,36 @@ export default function AppRouter() {
         <Route element={<ProtectedRoute />}>
           <Route element={<TabsLayout />}>
             <Route path={ROUTES.home} element={<HomePage />} />
-            <Route path={ROUTES.orders} element={<OrdersPage />} />
+            <Route
+              path={ROUTES.orders}
+              element={
+                <ErrorBoundary title="Orders Error" message="Unable to load orders list. Please try reloading.">
+                  <OrdersPage />
+                </ErrorBoundary>
+              }
+            />
             <Route path={ROUTES.profile} element={<ProfilePage />} />
           </Route>
           <Route element={<StackLayout />}>
             <Route path={ROUTES.shop()} element={<ShopPage />} />
             <Route path={ROUTES.product()} element={<ProductPage />} />
             <Route path={ROUTES.cart} element={<CartPage />} />
-            <Route path={ROUTES.checkout} element={<CheckoutPage />} />
-            <Route path={ROUTES.order()} element={<OrderDetailPage />} />
+            <Route
+              path={ROUTES.checkout}
+              element={
+                <ErrorBoundary title="Checkout Error" message="Unable to complete checkout. Your cart items are preserved.">
+                  <CheckoutPage />
+                </ErrorBoundary>
+              }
+            />
+            <Route
+              path={ROUTES.order()}
+              element={
+                <ErrorBoundary title="Order Details Error" message="Unable to display this order. Please try reloading.">
+                  <OrderDetailPage />
+                </ErrorBoundary>
+              }
+            />
             <Route path={ROUTES.notifications} element={<NotificationsPage />} />
           </Route>
         </Route>

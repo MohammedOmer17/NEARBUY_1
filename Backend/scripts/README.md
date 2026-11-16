@@ -94,3 +94,17 @@ npm run seed:kirana:reset
 The script checks for:
 - `SEED_TEST_DATA_MONGODB_URI` or `MONGODB_URI` in `.env` or system environment.
 - Rejects execution if `NODE_ENV === 'production'`.
+
+## Shared Catalogue Import and Migration
+
+The application-wide catalogue is stored in `data/productCatalog.json` and imported into MongoDB; frontend clients query MongoDB through the suggestions API rather than loading this file.
+
+```bash
+# Idempotent JSON-to-MongoDB import
+npm run seed:catalog
+
+# Import the JSON catalogue and link only exact-identity legacy listings
+npm run migrate:catalog
+```
+
+The catalogue currently contains 128 records. Unverified or unrelated remote image mappings use the local `/images/product-placeholder.svg` instead. Do not add product photos unless the specific product match and image source/license have been verified.

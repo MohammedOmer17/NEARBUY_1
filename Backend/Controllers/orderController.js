@@ -113,7 +113,9 @@ const createOrder = async (req, res) => {
     }
 
     const productIds = cart.items.map((item) => item.product);
-    const products = await ShopProduct.find({ _id: { $in: productIds } }).session(session);
+    const products = await ShopProduct.find({ _id: { $in: productIds } })
+      .populate("canonicalProduct", "name category unit packSize image")
+      .session(session);
     const productMap = new Map(products.map((product) => [String(product._id), product]));
 
     let totalAmount = 0;
@@ -143,9 +145,11 @@ const createOrder = async (req, res) => {
 
       snapshotItems.push({
         product: product._id,
-        name: product.name,
+        name: product.canonicalProduct?.name || product.name,
         quantity: cartItem.quantity,
-        unit: product.unit,
+        unit: product.canonicalProduct?.unit || product.unit,
+        image: product.canonicalProduct?.image || product.image || "/images/product-placeholder.svg",
+        category: product.canonicalProduct?.category || product.category,
         price: unitPrice,
         subtotal,
       });

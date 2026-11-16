@@ -4,6 +4,8 @@
   "scripts": {
     "start": "node server.js",
     "test": "node tests/deliveryMapsLifecycle.test.js && node tests/authCookie.test.js && node tests/multiShopComparison.test.js && node tests/shopOrders.test.js && node tests/authPersistence.test.js && node tests/sharedCatalogueAutocomplete.test.js",
+    "seed:catalog": "node scripts/seedCatalogFromJson.js",
+    "migrate:catalog": "node scripts/migrateCanonicalProducts.js",
     "seed:kirana": "node scripts/seedKiranaData.js",
     "seed:kirana:reset": "node scripts/seedKiranaData.js --reset"
   },

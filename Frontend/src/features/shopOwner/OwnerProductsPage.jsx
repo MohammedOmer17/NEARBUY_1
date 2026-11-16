@@ -3,7 +3,6 @@ import {
   Plus,
   Trash2,
   Edit2,
-  Package2,
   Search,
   Camera,
   X,
@@ -18,25 +17,36 @@ import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Modal from '../../components/ui/Modal'
 import { formatCurrency } from '../../utils/format'
+import ProductImage from '../../components/shared/ProductImage'
 
 const CATEGORIES = [
-  'Grocery & Kirana',
+  'Rice, Grains & Cereals',
+  'Atta, Flours & Staples',
+  'Dals & Pulses',
+  'Edible Oils & Ghee',
+  'Spices & Masalas',
   'Dairy & Eggs',
+  'Sugar, Salt & Sweeteners',
+  'Snacks & Biscuits',
+  'Beverages & Tea/Coffee',
+  'Breakfast & Packaged Food',
+  'Personal Care',
+  'Household & Cleaning',
+  'Grocery & Kirana',
   'Snacks & Munchies',
   'Beverages',
   'Staples & Grains',
-  'Spices & Masalas',
-  'Personal Care',
   'Household Essentials',
 ]
 
-const UNITS = ['1 packet', '1 pc', '1 box', '1 kg', '500 g', '250 g', '100 g', '1 l', '500 ml']
+const UNITS = ['kg', 'g', 'ltr', 'ml', 'packet', 'piece']
 
 const DEFAULT_FORM = {
   name: '',
   category: 'Grocery & Kirana',
   price: '',
-  unit: '1 packet',
+  unit: 'packet',
+  packSize: '',
   quantity: '20',
   description: '',
   brand: '',
@@ -64,6 +74,7 @@ export default function OwnerProductsPage() {
   const [suggestionsError, setSuggestionsError] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [activeSuggestionIndex, setActiveSuggestionIndex] = useState(-1)
+  const [isTypingName, setIsTypingName] = useState(false)
   const dropdownContainerRef = useRef(null)
   const nameInputRef = useRef(null)
   const fileInputRef = useRef(null)
@@ -92,7 +103,7 @@ export default function OwnerProductsPage() {
 
   // Debounced search for live autocomplete product suggestions
   useEffect(() => {
-    if (editingProduct || !modalOpen) {
+    if (editingProduct || !modalOpen || !isTypingName) {
       setSuggestions([])
       setShowSuggestions(false)
       setSuggestionsLoading(false)
@@ -110,23 +121,31 @@ export default function OwnerProductsPage() {
 
     setSuggestionsLoading(true)
     setSuggestionsError(false)
+    setSuggestions([])
+    let active = true
 
     const timer = setTimeout(async () => {
       try {
-        const results = await shopOwnerApi.suggestions(trimmedName, form.category)
-        setSuggestions(Array.isArray(results) ? results : [])
-        setShowSuggestions(true)
-        setActiveSuggestionIndex(-1)
+        const results = await shopOwnerApi.suggestions(trimmedName)
+        if (active) {
+          setSuggestions(Array.isArray(results) ? results : [])
+          setActiveSuggestionIndex(-1)
+        }
       } catch (err) {
-        setSuggestionsError(true)
-        setSuggestions([])
+        if (active) {
+          setSuggestionsError(true)
+          setSuggestions([])
+        }
       } finally {
-        setSuggestionsLoading(false)
+        if (active) setSuggestionsLoading(false)
       }
     }, 250)
 
-    return () => clearTimeout(timer)
-  }, [form.name, form.category, modalOpen, editingProduct])
+    return () => {
+      active = false
+      clearTimeout(timer)
+    }
+  }, [form.name, modalOpen, editingProduct, isTypingName])
 
   // Dismiss dropdown on outside click
   useEffect(() => {
@@ -136,6 +155,7 @@ export default function OwnerProductsPage() {
         !dropdownContainerRef.current.contains(e.target)
       ) {
         setShowSuggestions(false)
+        setIsTypingName(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -148,6 +168,7 @@ export default function OwnerProductsPage() {
     setSuggestions([])
     setShowSuggestions(false)
     setActiveSuggestionIndex(-1)
+    setIsTypingName(false)
     setModalError('')
     setModalOpen(true)
   }
@@ -158,14 +179,15 @@ export default function OwnerProductsPage() {
     setSuggestions([])
     setShowSuggestions(false)
     setForm({
-      name: p.name || '',
-      category: p.category || 'Grocery & Kirana',
+      name: p.canonicalProduct?.name || p.name || '',
+      category: p.canonicalProduct?.category || p.category || 'Grocery & Kirana',
       price: String(p.price || ''),
-      unit: p.unit || '1 packet',
+      unit: p.canonicalProduct?.unit || p.unit || 'packet',
+      packSize: p.canonicalProduct?.packSize || p.packSize || '',
       quantity: String(p.quantity ?? ''),
       description: p.description || '',
-      brand: p.brand || '',
-      image: p.image || '',
+      brand: p.canonicalProduct?.brand || p.brand || '',
+      image: p.canonicalProduct?.image || p.image || '',
       canonicalProductId: p.canonicalProductId || p.canonicalProduct?._id || p.canonicalProduct || null,
     })
     setModalOpen(true)
@@ -179,10 +201,12 @@ export default function OwnerProductsPage() {
       brand: item.brand || prev.brand,
       unit: item.unit || prev.unit,
       image: item.image || prev.image,
+      packSize: item.packSize || '',
       description: item.description || prev.description,
       canonicalProductId: item.canonicalProductId || item._id || item.id,
     }))
     setShowSuggestions(false)
+    setIsTypingName(false)
     setActiveSuggestionIndex(-1)
     setModalError('')
   }
@@ -193,13 +217,15 @@ export default function OwnerProductsPage() {
       canonicalProductId: null,
     }))
     setShowSuggestions(false)
+    setIsTypingName(false)
     setActiveSuggestionIndex(-1)
   }
 
   const handleNameKeyDown = (e) => {
     if (!showSuggestions || editingProduct) return
 
-    const totalOptions = suggestions.length + 1 // +1 for "Create new product" option
+    const showCreateOption = !suggestionsLoading && suggestions.length === 0
+    const totalOptions = suggestions.length + (showCreateOption ? 1 : 0)
 
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -211,7 +237,7 @@ export default function OwnerProductsPage() {
       if (activeSuggestionIndex >= 0 && activeSuggestionIndex < suggestions.length) {
         e.preventDefault()
         handleSelectSuggestion(suggestions[activeSuggestionIndex])
-      } else if (activeSuggestionIndex === suggestions.length) {
+      } else if (showCreateOption && activeSuggestionIndex === suggestions.length) {
         e.preventDefault()
         handleSelectCreateNew()
       }
@@ -222,43 +248,36 @@ export default function OwnerProductsPage() {
     }
   }
 
-  const updateField = (key) => (event) => {
-    setModalError('')
-    setForm((current) => ({ ...current, [key]: event.target.value }))
+  const updateField = (key) => (e) => {
+    setForm((f) => ({ ...f, [key]: e.target.value }))
   }
 
   const handleImageFileChange = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (!file.type.startsWith('image/')) {
-      setModalError('Please choose a valid image file.')
-      return
-    }
     const reader = new FileReader()
     reader.onload = () => {
-      setForm((current) => ({ ...current, image: String(reader.result) }))
-      setModalError('')
-    }
-    reader.onerror = () => {
-      setModalError('Failed to read the selected image file.')
+      setForm((f) => ({ ...f, image: reader.result }))
     }
     reader.readAsDataURL(file)
   }
 
-  const handleSave = async (event) => {
-    event.preventDefault()
+  const handleSave = async (e) => {
+    e.preventDefault()
     setModalError('')
 
     if (!form.name.trim()) {
-      setModalError('Please enter product name.')
+      setModalError('Product name is required.')
       return
     }
-    if (form.price === '' || Number(form.price) < 0 || !Number.isFinite(Number(form.price))) {
-      setModalError('Please enter a valid non-negative price.')
+    const numPrice = Number(form.price)
+    if (isNaN(numPrice) || numPrice < 0) {
+      setModalError('Enter a valid price.')
       return
     }
-    if (!form.unit.trim()) {
-      setModalError('Please select a unit.')
+    const numQty = Number(form.quantity)
+    if (isNaN(numQty) || numQty < 0) {
+      setModalError('Enter a valid stock quantity.')
       return
     }
 
@@ -266,13 +285,14 @@ export default function OwnerProductsPage() {
     try {
       const payload = {
         name: form.name.trim(),
-        category: form.category.trim(),
-        price: Number(form.price),
-        unit: form.unit.trim(),
-        quantity: Math.max(0, Number(form.quantity || 0)),
+        category: form.category,
+        price: numPrice,
+        unit: form.unit,
+        quantity: numQty,
         description: form.description.trim(),
         brand: form.brand.trim(),
         image: form.image.trim(),
+        packSize: form.packSize.trim(),
         canonicalProductId: form.canonicalProductId || undefined,
       }
 
@@ -303,19 +323,6 @@ export default function OwnerProductsPage() {
     }
   }
 
-  const handleStockQuickUpdate = async (productId, nextQty) => {
-    try {
-      await shopOwnerApi.updateStock(productId, Math.max(0, nextQty))
-      setProducts((prods) =>
-        prods.map((p) =>
-          p._id === productId ? { ...p, quantity: nextQty, isAvailable: nextQty > 0 } : p,
-        ),
-      )
-    } catch (err) {
-      setError('Unable to update stock quantity.')
-    }
-  }
-
   // Filter calculations
   const inStockCount = products.filter((p) => p.isAvailable && p.quantity > 0).length
   const outOfStockCount = products.filter((p) => !p.isAvailable || p.quantity <= 0).length
@@ -323,8 +330,8 @@ export default function OwnerProductsPage() {
   const filteredProducts = products.filter((p) => {
     const matchesSearch =
       !query ||
-      p.name?.toLowerCase().includes(query.toLowerCase()) ||
-      p.category?.toLowerCase().includes(query.toLowerCase())
+      (p.canonicalProduct?.name || p.name)?.toLowerCase().includes(query.toLowerCase()) ||
+      (p.canonicalProduct?.category || p.category)?.toLowerCase().includes(query.toLowerCase())
 
     if (!matchesSearch) return false
     if (filter === 'in_stock') return p.isAvailable && p.quantity > 0
@@ -333,25 +340,25 @@ export default function OwnerProductsPage() {
   })
 
   return (
-    <div className="pb-28">
+    <div className="min-h-screen bg-[#100A14] text-white pb-28">
       <PageHeader title="Product Management" back={false} />
 
       <div className="px-4 pt-3 space-y-3">
         {error && (
-          <p role="alert" className="rounded-2xl bg-danger-50 p-3 text-xs font-semibold text-danger">
+          <p role="alert" className="rounded-2xl bg-danger/15 border border-danger/30 p-3 text-xs font-semibold text-danger">
             {error}
           </p>
         )}
 
         {/* Search input matching Storyboard Screen 7 */}
         <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-mute" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94849A]" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search products in inventory..."
-            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-line text-xs font-medium text-ink outline-none focus:border-accent-500 shadow-xs"
+            className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-[#170F1B] border border-[#593650] text-xs font-medium text-white outline-none focus:border-[#EC55C8] shadow-xs"
           />
         </div>
 
@@ -366,10 +373,10 @@ export default function OwnerProductsPage() {
               key={key}
               type="button"
               onClick={() => setFilter(key)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition whitespace-nowrap ${
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-150 whitespace-nowrap ${
                 filter === key
-                  ? 'bg-accent-500 text-white shadow-xs'
-                  : 'bg-white text-mute border border-line hover:bg-canvas'
+                  ? 'bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] text-white shadow-md shadow-pink-500/20'
+                  : 'bg-[#211522] text-[#94849A] border border-[#593650] hover:text-white'
               }`}
             >
               {label}
@@ -380,10 +387,10 @@ export default function OwnerProductsPage() {
         {/* Products List matching Storyboard Screen 7 */}
         <div className="space-y-2.5 pt-1">
           {loading ? (
-            <p className="text-center py-8 text-xs text-mute font-medium">Loading products...</p>
+            <p className="text-center py-8 text-xs text-[#94849A] font-medium">Loading products...</p>
           ) : filteredProducts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-line bg-white p-8 text-center text-xs text-mute">
-              <PackageSearch className="mx-auto h-8 w-8 text-mute/50 mb-2" />
+            <div className="rounded-2xl border border-dashed border-[#593650] bg-[#211522] p-8 text-center text-xs text-[#94849A]">
+              <PackageSearch className="mx-auto h-8 w-8 text-[#94849A] mb-2" />
               No products found matching your filter.
             </div>
           ) : (
@@ -392,27 +399,26 @@ export default function OwnerProductsPage() {
               return (
                 <div
                   key={p._id}
-                  className="rounded-2xl border border-line bg-white p-3.5 shadow-card flex items-center justify-between gap-3"
+                  className="rounded-2xl border border-[#593650] bg-[#211522] p-3.5 shadow-card flex items-center justify-between gap-3 text-white"
                 >
                   <div className="flex items-center gap-3 min-w-0 flex-1">
-                    <div className="h-14 w-14 shrink-0 rounded-xl bg-canvas border border-line overflow-hidden grid place-items-center text-purple-700">
-                      {p.image ? (
-                        <img src={p.image} alt={p.name} className="h-full w-full object-contain p-1" />
-                      ) : (
-                        <Package2 className="h-6 w-6 text-mute" />
-                      )}
+                    <div className="h-14 w-14 shrink-0 rounded-xl bg-[#170F1B] border border-[#593650] overflow-hidden grid place-items-center text-[#EC55C8]">
+                      <ProductImage src={p.canonicalProduct?.image || p.image} alt={p.name}
+                        category={p.canonicalProduct?.category || p.category} className="h-full w-full object-contain p-1" />
                     </div>
 
                     <div className="min-w-0">
-                      <h3 className="truncate font-bold text-xs text-ink">{p.name}</h3>
-                      <p className="text-[11px] text-mute">{p.unit || 'Standard'} · {p.category}</p>
+                      <h3 className="truncate font-bold text-xs text-white">{p.canonicalProduct?.name || p.name}</h3>
+                      <p className="text-[11px] text-[#94849A]">
+                        {p.canonicalProduct?.unit || p.unit || 'Standard'} · {p.canonicalProduct?.category || p.category}
+                      </p>
                       <div className="mt-1 flex items-center gap-2">
-                        <span className="font-black text-xs text-ink">{formatCurrency(p.price)}</span>
+                        <span className="font-black text-xs text-white">{formatCurrency(p.price)}</span>
                         <span
                           className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                             inStock
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200'
+                              ? 'bg-[#20C878]/15 text-[#20C878] border border-[#20C878]/30'
+                              : 'bg-[#F05A79]/15 text-[#F05A79] border border-[#F05A79]/30'
                           }`}
                         >
                           {inStock ? `In Stock (${p.quantity})` : 'Out of Stock'}
@@ -425,7 +431,7 @@ export default function OwnerProductsPage() {
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(p)}
-                      className="grid h-8 w-8 place-items-center rounded-lg bg-canvas text-mute hover:text-accent-500 transition active:scale-95"
+                      className="grid h-8 w-8 place-items-center rounded-lg bg-[#170F1B] text-[#94849A] hover:text-[#EC55C8] transition active:scale-95"
                       aria-label="Edit product"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
@@ -433,7 +439,7 @@ export default function OwnerProductsPage() {
                     <button
                       type="button"
                       onClick={() => setDeleteConfirmId(p._id)}
-                      className="grid h-8 w-8 place-items-center rounded-lg bg-canvas text-mute hover:text-danger transition active:scale-95"
+                      className="grid h-8 w-8 place-items-center rounded-lg bg-[#170F1B] text-[#94849A] hover:text-danger transition active:scale-95"
                       aria-label="Delete product"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -447,11 +453,11 @@ export default function OwnerProductsPage() {
       </div>
 
       {/* Floating Add Product Button matching Storyboard Screen 7 */}
-      <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-md px-4">
+      <div className="fixed inset-x-0 bottom-16 z-30 mx-auto w-full max-w-md lg:max-w-xl px-4">
         <Button
           full
           onClick={handleOpenAdd}
-          className="bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold text-xs py-3 shadow-lg shadow-pink-500/30 flex items-center justify-center gap-1.5"
+          className="text-xs py-3 shadow-lg shadow-pink-500/30 flex items-center justify-center gap-1.5"
         >
           <Plus className="h-4 w-4" /> Add New Product
         </Button>
@@ -459,16 +465,16 @@ export default function OwnerProductsPage() {
 
       {/* Add / Edit Product Modal matching Storyboard Screen 8 */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4">
-          <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[92dvh]">
-            <div className="flex items-center justify-between border-b border-line px-5 py-4">
-              <h3 className="text-base font-extrabold text-ink">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4">
+          <div className="w-full max-w-lg rounded-t-3xl sm:rounded-3xl bg-[#211522] border border-[#593650] shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] text-white">
+            <div className="flex items-center justify-between border-b border-[#593650] px-5 py-4">
+              <h3 className="text-base font-extrabold text-white">
                 {editingProduct ? 'Edit Product' : 'Add Product'}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalOpen(false)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-canvas text-mute hover:text-ink"
+                className="grid h-8 w-8 place-items-center rounded-full bg-[#170F1B] text-[#94849A] hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -478,7 +484,7 @@ export default function OwnerProductsPage() {
               {modalError && (
                 <div
                   role="alert"
-                  className="rounded-2xl bg-danger-50 border border-danger-200 p-3 text-xs font-semibold text-danger flex items-center gap-2"
+                  className="rounded-2xl bg-danger/15 border border-danger/30 p-3 text-xs font-semibold text-danger flex items-center gap-2"
                 >
                   <AlertCircle className="h-4 w-4 shrink-0 text-danger" />
                   <span className="flex-1">{modalError}</span>
@@ -495,19 +501,20 @@ export default function OwnerProductsPage() {
 
               {/* Product Photo preview / upload URL */}
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">Product Photo</label>
+                <label className="block text-xs font-semibold text-[#C4B4C9] mb-1">Product Photo</label>
                 <div className="flex items-center gap-3">
                   <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="relative h-16 w-16 shrink-0 rounded-2xl bg-canvas border border-line grid place-items-center overflow-hidden cursor-pointer hover:border-accent-500 transition group"
+                    onClick={() => !form.canonicalProductId && fileInputRef.current?.click()}
+                    className="relative h-16 w-16 shrink-0 rounded-2xl bg-[#170F1B] border border-[#593650] grid place-items-center overflow-hidden cursor-pointer hover:border-[#EC55C8] transition group"
                     title="Click to upload image file"
                   >
                     {form.image ? (
-                      <img src={form.image} alt="Preview" className="h-full w-full object-contain p-1" />
+                      <ProductImage src={form.image} alt="Preview" category={form.category}
+                        className="h-full w-full object-contain p-1" />
                     ) : (
                       <div className="flex flex-col items-center">
-                        <Camera className="h-5 w-5 text-mute group-hover:text-accent-500 transition" />
-                        <span className="text-[9px] text-mute font-medium mt-0.5">Upload</span>
+                        <Camera className="h-5 w-5 text-[#94849A] group-hover:text-[#EC55C8] transition" />
+                        <span className="text-[9px] text-[#94849A] font-medium mt-0.5">Upload</span>
                       </div>
                     )}
                   </div>
@@ -516,6 +523,7 @@ export default function OwnerProductsPage() {
                     type="file"
                     accept="image/*"
                     onChange={handleImageFileChange}
+                    disabled={Boolean(form.canonicalProductId)}
                     className="hidden"
                   />
                   <div className="flex-1 space-y-1">
@@ -524,13 +532,15 @@ export default function OwnerProductsPage() {
                       value={form.image.startsWith('data:') ? '' : form.image}
                       onChange={updateField('image')}
                       placeholder={form.image.startsWith('data:') ? 'Image uploaded from device' : 'Paste image URL (optional)'}
-                      className="w-full text-xs p-2.5 rounded-xl border border-line bg-canvas outline-none focus:border-accent-500"
+                      disabled={Boolean(form.canonicalProductId)}
+                      className="w-full text-xs p-2.5 rounded-xl border border-[#593650] bg-[#170F1B] text-white outline-none focus:border-[#EC55C8]"
                     />
                     {form.image && (
                       <button
                         type="button"
+                        disabled={Boolean(form.canonicalProductId)}
                         onClick={() => setForm((c) => ({ ...c, image: '' }))}
-                        className="text-[10px] text-rose-600 hover:underline font-semibold block"
+                        className="text-[10px] text-danger hover:underline font-semibold block"
                       >
                         Remove photo
                       </button>
@@ -541,11 +551,11 @@ export default function OwnerProductsPage() {
 
               {/* Dynamic Product Name Input with Live Autocomplete Suggestions */}
               <div className="relative" ref={dropdownContainerRef}>
-                <label className="block text-xs font-semibold text-ink mb-1">
+                <label className="block text-xs font-semibold text-[#C4B4C9] mb-1">
                   Product Name
                   {form.canonicalProductId && (
-                    <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-accent-600 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200">
-                      <CheckCircle2 className="h-3 w-3 text-accent-500" />
+                    <span className="ml-2 inline-flex items-center gap-1 text-[10px] font-bold text-[#F58AD8] bg-[#EC55C8]/15 px-2 py-0.5 rounded-full border border-[#EC55C8]/30">
+                      <CheckCircle2 className="h-3 w-3 text-[#EC55C8]" />
                       Catalogue Linked
                     </span>
                   )}
@@ -555,120 +565,122 @@ export default function OwnerProductsPage() {
                   <input
                     ref={nameInputRef}
                     type="text"
-                    placeholder="e.g. Maggie, Tata Salt, Eggs"
+                    placeholder="e.g. Maggi, Tata Salt, Eggs"
                     value={form.name}
+                    disabled={Boolean(editingProduct && form.canonicalProductId)}
                     onChange={(e) => {
                       updateField('name')(e)
                       if (form.canonicalProductId) {
                         setForm((prev) => ({ ...prev, canonicalProductId: null }))
                       }
                       setShowSuggestions(true)
-                    }}
-                    onFocus={() => {
-                      if (form.name.trim().length >= 2 && !editingProduct) {
-                        setShowSuggestions(true)
-                      }
+                      setIsTypingName(true)
                     }}
                     onKeyDown={handleNameKeyDown}
-                    className="w-full text-xs p-2.5 rounded-xl border border-line bg-canvas outline-none focus:border-accent-500 font-medium text-ink pr-8"
+                    className="w-full text-xs p-2.5 rounded-xl border border-[#593650] bg-[#170F1B] outline-none focus:border-[#EC55C8] font-medium text-white pr-8"
                   />
                   {suggestionsLoading && (
                     <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#EC55C8] border-t-transparent" />
                     </div>
                   )}
                 </div>
+                {editingProduct && form.canonicalProductId && (
+                  <p className="mt-1 text-[10px] text-[#94849A]">
+                    This name is standardized by the shared catalogue. To list a different product, add it as a new item.
+                  </p>
+                )}
 
                 {/* Suggestions Dropdown */}
-                {showSuggestions && !editingProduct && form.name.trim().length >= 2 && (
+                {showSuggestions && isTypingName && !editingProduct && form.name.trim().length >= 2 && (
                   <div
-                    className="absolute left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto rounded-2xl border border-line bg-white shadow-2xl z-50 p-1.5 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150"
+                    role="listbox"
+                    className="absolute left-0 right-0 top-full mt-1 max-h-64 overflow-y-auto rounded-2xl border border-[#593650] bg-[#211522] shadow-2xl z-50 p-1.5 space-y-1 animate-in fade-in slide-in-from-top-1 duration-150 text-white"
                   >
                     {suggestionsLoading && suggestions.length === 0 && (
-                      <div className="p-3 text-center text-xs text-mute flex items-center justify-center gap-2">
-                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-accent-500 border-t-transparent" />
+                      <div className="p-3 text-center text-xs text-[#94849A] flex items-center justify-center gap-2">
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#EC55C8] border-t-transparent" />
                         Searching shared catalogue...
                       </div>
                     )}
 
                     {suggestionsError && (
-                      <div className="p-2.5 text-[11px] text-amber-700 bg-amber-50 rounded-xl border border-amber-200">
+                      <div className="p-2.5 text-[11px] text-[#F5A623] bg-[#F5A623]/15 rounded-xl border border-[#F5A623]/30">
                         Unable to load suggestions. You can still save this as a new product.
+                      </div>
+                    )}
+
+                    {!suggestionsLoading && suggestions.length === 0 && !suggestionsError && (
+                      <div className="p-2.5 text-center text-xs text-[#94849A]">
+                        No matching items in shared catalogue.
                       </div>
                     )}
 
                     {suggestions.map((item, idx) => {
                       const isActive = activeSuggestionIndex === idx
                       return (
-                        <div
+                        <button
+                          type="button"
+                          role="option"
+                          aria-selected={isActive}
                           key={item.id || item._id}
                           onClick={() => handleSelectSuggestion(item)}
                           onMouseEnter={() => setActiveSuggestionIndex(idx)}
-                          className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition ${
+                          className={`flex items-center gap-2.5 p-2 rounded-xl cursor-pointer transition w-full text-left ${
                             isActive
-                              ? 'bg-pink-50 border border-pink-200'
-                              : 'hover:bg-canvas border border-transparent'
+                              ? 'bg-[#2B1B2D] border border-[#EC55C8]'
+                              : 'hover:bg-[#170F1B] border border-transparent'
                           }`}
                         >
-                          <div className="h-10 w-10 shrink-0 rounded-lg bg-canvas border border-line overflow-hidden p-0.5 flex items-center justify-center">
-                            {item.image ? (
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="h-full w-full object-contain"
-                              />
-                            ) : (
-                              <Package2 className="h-4 w-4 text-mute" />
-                            )}
+                          <div className="h-10 w-10 shrink-0 rounded-lg bg-[#170F1B] border border-[#593650] overflow-hidden p-0.5 flex items-center justify-center">
+                            <ProductImage src={item.image} alt={item.name} category={item.category}
+                              className="h-full w-full object-contain" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <p className="text-xs font-bold text-ink truncate">{item.name}</p>
+                              <p className="text-xs font-bold text-white truncate">{item.name}</p>
                               {item.brand && (
-                                <span className="text-[10px] font-semibold text-accent-600 bg-pink-100/60 px-1.5 py-0.2 rounded">
+                                <span className="text-[10px] font-semibold text-[#F58AD8] bg-[#EC55C8]/15 px-1.5 py-0.2 rounded border border-[#EC55C8]/30">
                                   {item.brand}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1.5 text-[10px] text-mute mt-0.5">
+                            <div className="flex items-center gap-1.5 text-[10px] text-[#94849A] mt-0.5">
                               <span>{item.category}</span>
                               {item.unit && <span>• {item.unit}</span>}
                               {item.packSize && <span>({item.packSize})</span>}
                             </div>
                           </div>
-                          <span className="text-[10px] font-bold text-accent-500 bg-pink-50 px-2 py-0.5 rounded-full border border-pink-200 shrink-0">
+                          <span className="text-[10px] font-bold text-[#EC55C8] bg-[#2B1B2D] px-2 py-0.5 rounded-full border border-[#593650] shrink-0">
                             Select
                           </span>
-                        </div>
+                        </button>
                       )
                     })}
 
-                    {!suggestionsLoading && suggestions.length === 0 && !suggestionsError && (
-                      <div className="p-2.5 text-center text-xs text-mute">
-                        No matching items in shared catalogue.
-                      </div>
-                    )}
-
                     {/* Create New Product Option */}
-                    <div
-                      onClick={handleSelectCreateNew}
-                      onMouseEnter={() => setActiveSuggestionIndex(suggestions.length)}
-                      className={`flex items-center gap-2 p-2.5 rounded-xl cursor-pointer transition border border-dashed ${
-                        activeSuggestionIndex === suggestions.length
-                          ? 'bg-emerald-50 border-emerald-400 text-emerald-900'
-                          : 'bg-emerald-50/50 border-emerald-300 text-emerald-800 hover:bg-emerald-50'
-                      }`}
-                    >
-                      <Plus className="h-4 w-4 text-emerald-600 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold truncate">
-                          Create new product: &quot;{form.name.trim()}&quot;
-                        </p>
-                        <p className="text-[10px] text-emerald-700">
-                          Adds new shared catalogue entry for all shops
-                        </p>
-                      </div>
-                    </div>
+                    {!suggestionsLoading && suggestions.length === 0 && (
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={activeSuggestionIndex === suggestions.length}
+                        onClick={handleSelectCreateNew}
+                        onMouseEnter={() => setActiveSuggestionIndex(suggestions.length)}
+                        className={`flex items-center gap-2 p-2.5 rounded-xl cursor-pointer transition border border-dashed w-full text-left ${
+                          activeSuggestionIndex === suggestions.length
+                            ? 'bg-[#20C878]/20 border-[#20C878] text-white'
+                            : 'bg-[#20C878]/10 border-[#20C878]/40 text-[#20C878] hover:bg-[#20C878]/20'
+                        }`}
+                      >
+                        <Plus className="h-4 w-4 text-[#20C878] shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold truncate text-white">Create New Product</p>
+                          <p className="text-[10px] text-[#20C878]">
+                            Add &quot;{form.name.trim()}&quot; to the shared catalogue
+                          </p>
+                        </div>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -678,17 +690,19 @@ export default function OwnerProductsPage() {
                 placeholder="e.g. Maggi, Nestle, Tata"
                 value={form.brand}
                 onChange={updateField('brand')}
+                disabled={Boolean(form.canonicalProductId)}
               />
 
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">Category</label>
+                <label className="block text-xs font-semibold text-[#C4B4C9] mb-1">Category</label>
                 <select
                   value={form.category}
                   onChange={updateField('category')}
-                  className="w-full text-xs font-semibold text-ink bg-white border border-line p-3 rounded-xl outline-none focus:border-accent-500"
+                  disabled={Boolean(form.canonicalProductId)}
+                  className="w-full text-xs font-semibold text-white bg-[#170F1B] border border-[#593650] p-3 rounded-xl outline-none focus:border-[#EC55C8]"
                 >
                   {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
+                    <option key={c} value={c} className="bg-[#170F1B] text-white">
                       {c}
                     </option>
                   ))}
@@ -707,20 +721,29 @@ export default function OwnerProductsPage() {
                 />
 
                 <div>
-                  <label className="block text-xs font-semibold text-ink mb-1">Unit / Pack</label>
+                  <label className="block text-xs font-semibold text-[#C4B4C9] mb-1">Measurement Unit</label>
                   <select
                     value={form.unit}
                     onChange={updateField('unit')}
-                    className="w-full text-xs font-semibold text-ink bg-white border border-line p-3 rounded-xl outline-none focus:border-accent-500"
+                    disabled={Boolean(form.canonicalProductId)}
+                    className="w-full text-xs font-semibold text-white bg-[#170F1B] border border-[#593650] p-3 rounded-xl outline-none focus:border-[#EC55C8]"
                   >
                     {UNITS.map((u) => (
-                      <option key={u} value={u}>
+                      <option key={u} value={u} className="bg-[#170F1B] text-white">
                         {u}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
+
+              <Input
+                label="Package Size (Optional)"
+                placeholder="e.g. 1 kg, 500 ml, 6 pieces"
+                value={form.packSize}
+                onChange={updateField('packSize')}
+                disabled={Boolean(form.canonicalProductId)}
+              />
 
               <Input
                 label="Stock Quantity"
@@ -732,7 +755,7 @@ export default function OwnerProductsPage() {
               />
 
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">
+                <label className="block text-xs font-semibold text-[#C4B4C9] mb-1">
                   Description (Optional)
                 </label>
                 <textarea
@@ -740,7 +763,7 @@ export default function OwnerProductsPage() {
                   value={form.description}
                   onChange={updateField('description')}
                   placeholder="Iodized salt for daily cooking."
-                  className="w-full text-xs p-2.5 rounded-xl border border-line bg-canvas outline-none focus:border-accent-500"
+                  className="w-full text-xs p-2.5 rounded-xl border border-[#593650] bg-[#170F1B] text-white outline-none focus:border-[#EC55C8]"
                 />
               </div>
 
@@ -748,7 +771,7 @@ export default function OwnerProductsPage() {
                 type="submit"
                 full
                 loading={saving}
-                className="mt-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-3 text-xs shadow-md shadow-pink-500/25"
+                className="mt-3 text-xs py-3 shadow-md shadow-pink-500/25"
               >
                 Save Product
               </Button>
@@ -778,7 +801,7 @@ export default function OwnerProductsPage() {
           </div>
         }
       >
-        <p className="text-xs text-mute py-1">
+        <p className="text-xs text-[#94849A] py-1">
           Are you sure you want to remove this product from your shop inventory?
         </p>
       </Modal>

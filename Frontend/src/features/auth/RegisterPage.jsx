@@ -60,12 +60,12 @@ export default function RegisterPage() {
   return (
     <form onSubmit={submit} noValidate className="space-y-3.5">
       <div>
-        <h2 className="text-xl font-bold text-ink">Create Your Account</h2>
-        <p className="mt-1 text-xs text-mute">Join NearBuy and shop from nearby kirana stores.</p>
+        <h2 className="text-xl font-bold text-white">Create Your Account</h2>
+        <p className="mt-1 text-xs text-[#94849A]">Join NearBuy and shop from nearby kirana stores.</p>
       </div>
 
       {serverError && (
-        <p role="alert" className="rounded-xl bg-danger-50 p-3 text-xs font-semibold text-danger">
+        <p role="alert" className="rounded-xl bg-danger/15 border border-danger/30 p-3 text-xs font-semibold text-danger">
           {serverError}
         </p>
       )}
@@ -98,7 +98,7 @@ export default function RegisterPage() {
         type="tel"
         autoComplete="tel"
         inputMode="tel"
-        placeholder="10-digit mobile number"
+        placeholder="98765 43210"
         value={form.phone}
         onChange={set('phone')}
         error={errors.phone}
@@ -120,35 +120,41 @@ export default function RegisterPage() {
         icon={Lock}
         type="password"
         autoComplete="new-password"
-        placeholder="Re-enter password"
+        placeholder="Repeat password"
         value={form.confirmPassword}
         onChange={set('confirmPassword')}
         error={errors.confirmPassword}
       />
 
-      <div className="pt-1">
-        <label className="flex items-start gap-2.5 cursor-pointer text-xs text-mute">
-          <input
-            type="checkbox"
-            className="sr-only"
-            checked={form.agreeTerms}
-            onChange={(e) => setForm((f) => ({ ...f, agreeTerms: e.target.checked }))}
-          />
-          {form.agreeTerms ? (
-            <CheckSquare className="h-4 w-4 shrink-0 text-accent-500 mt-0.5" />
-          ) : (
-            <Square className="h-4 w-4 shrink-0 text-mute mt-0.5" />
-          )}
+      {/* Terms checkbox */}
+      <div>
+        <label className="flex items-start gap-2.5 cursor-pointer text-xs text-[#C4B4C9] select-none">
+          <button
+            type="button"
+            onClick={() => setForm((f) => ({ ...f, agreeTerms: !f.agreeTerms }))}
+            className="mt-0.5 text-[#EC55C8] focus:outline-none"
+            aria-checked={form.agreeTerms}
+            role="checkbox"
+          >
+            {form.agreeTerms ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4 text-[#94849A]" />
+            )}
+          </button>
           <span>
             I agree to the{' '}
-            <span className="font-semibold text-accent-500 underline">Terms & Conditions</span> and{' '}
-            <span className="font-semibold text-accent-500 underline">Privacy Policy</span>
+            <span className="font-semibold text-[#EC55C8] hover:underline">
+              Terms & Conditions
+            </span>{' '}
+            and{' '}
+            <span className="font-semibold text-[#EC55C8] hover:underline">
+              Privacy Policy
+            </span>
           </span>
         </label>
         {errors.agreeTerms && (
-          <p role="alert" className="mt-1 text-xs text-danger">
-            {errors.agreeTerms}
-          </p>
+          <p className="mt-1 text-xs text-danger">{errors.agreeTerms}</p>
         )}
       </div>
 
@@ -156,14 +162,14 @@ export default function RegisterPage() {
         type="submit"
         full
         loading={submitting}
-        className="mt-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/25 uppercase tracking-wide font-bold"
+        className="mt-2 text-sm shadow-md shadow-pink-500/25"
       >
         Create Account
       </Button>
 
-      <p className="pt-2 text-center text-xs text-mute">
-        Already registered?{' '}
-        <Link to={ROUTES.login} className="font-bold text-accent-500 hover:underline">
+      <p className="pt-1 text-center text-xs text-[#94849A]">
+        Already have an account?{' '}
+        <Link to={ROUTES.login} className="font-bold text-[#EC55C8] hover:underline">
           Login
         </Link>
       </p>

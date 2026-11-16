@@ -10,6 +10,7 @@ export function unwrap(data, ...keys) {
 
 export function normalizeProduct(p) {
   const shop = asObj(p.shop)
+  const canonical = asObj(p.canonicalProduct) || {}
   const isStocked =
     p.quantity === undefined || p.quantity === null || Number(p.quantity) > 0
   const canonicalId =
@@ -24,14 +25,14 @@ export function normalizeProduct(p) {
     shopName: shop?.shopName || shop?.name || p.shopName || '',
     shopAddress: shop?.address || p.shopAddress || '',
     shopLocation: shop?.location || p.shopLocation || null,
-    name: p.name || '',
-    description: p.description || '',
-    category: p.category || '',
-    brand: p.brand || '',
-    image: p.image || '',
+    name: canonical.name || p.name || '',
+    description: canonical.description || p.description || '',
+    category: canonical.category || p.category || '',
+    brand: canonical.brand || p.brand || '',
+    image: canonical.image || p.image || '',
     price: Number.isFinite(Number(p.price)) && Number(p.price) >= 0 ? Number(p.price) : 0,
-    unit: p.unit || '',
-    packSize: p.packSize || '',
+    unit: canonical.unit || p.unit || '',
+    packSize: canonical.packSize || p.packSize || '',
     variant: p.variant || '',
     barcode: p.barcode || p.gtin || '',
     // Only availability is exposed. Stock quantity is deliberately dropped.
@@ -119,12 +120,14 @@ export function normalizeCart(data) {
   const items = rawItems
     .map((i) => {
       const p = asObj(i.product) || {}
+      const canonical = asObj(p.canonicalProduct) || {}
       return {
         productId: p._id || p.id || refId(i.product) || i.productId,
-        name: i.name || p.name || 'Item',
-        image: i.image || p.image || '',
-        unit: i.unit || p.unit || '',
-        packSize: p.packSize || i.packSize || '',
+        name: canonical.name || i.name || p.name || 'Item',
+        image: canonical.image || i.image || p.image || '',
+        category: canonical.category || p.category || '',
+        unit: canonical.unit || i.unit || p.unit || '',
+        packSize: canonical.packSize || p.packSize || i.packSize || '',
         price: Number(i.price ?? p.price) || 0,
         quantity: Number(i.quantity) || 0,
       }
@@ -167,9 +170,12 @@ export function normalizeOrder(o) {
     captainLocation: captain?.location || null,
     items: (o.items || []).map((i) => ({
       name: i.name || asObj(i.product)?.name || 'Item',
+      image: i.image || asObj(i.product)?.image || '',
+      category: i.category || asObj(i.product)?.category || '',
       quantity: Number(i.quantity) || 0,
       price: Number(i.price) || 0,
       unit: i.unit || '',
+      packSize: i.packSize || '',
     })),
     totalAmount: Number(o.totalAmount) || 0,
     fulfillmentType: o.fulfillmentType,
@@ -232,4 +238,3 @@ export function normalizeCaptainDelivery(o) {
     updatedAt: o.updatedAt,
   }
 }
-

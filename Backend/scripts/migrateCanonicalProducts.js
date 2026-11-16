@@ -10,7 +10,7 @@ if (fs.existsSync(envFilePath)) {
 const connectToDb = require("../db/db");
 const { CanonicalProduct, computeProductIdentityKey, identityPart } = require("../models/CanonicalProduct");
 const ShopProduct = require("../models/ShopProduct");
-const { CANONICAL_PRODUCTS } = require("./data/kiranaProducts");
+const { seedCatalogFromJson } = require("./seedCatalogFromJson");
 
 // Generates helpful aliases for search/autocomplete
 function generateAliases(prod) {
@@ -61,57 +61,8 @@ async function migrateCanonicalProducts() {
   await connectToDb();
   console.log(`Connected to database: ${mongoose.connection.name}`);
 
-  let canonicalCreated = 0;
-  let canonicalUpdated = 0;
-
-  // 1. Seed/Upsert 118 Canonical Products from CANONICAL_PRODUCTS
-  console.log(`\n1. Processing ${CANONICAL_PRODUCTS.length} predefined canonical products...`);
-  for (const item of CANONICAL_PRODUCTS) {
-    const key = computeProductIdentityKey({
-      name: item.name,
-      brand: item.brand,
-      category: item.category,
-      unit: item.unit,
-      packSize: item.packSize || "",
-    });
-
-    const aliases = generateAliases(item);
-
-    let doc = await CanonicalProduct.findOne({ identityKey: key });
-    if (!doc) {
-      doc = await CanonicalProduct.create({
-        name: item.name,
-        normalizedName: identityPart(item.name),
-        identityKey: key,
-        category: item.category,
-        brand: item.brand || "",
-        unit: item.unit,
-        packSize: item.packSize || "",
-        description: item.description || "",
-        image: item.image || "",
-        aliases,
-        tier: item.tier || "popular",
-        basePrice: item.basePrice || 0,
-      });
-      canonicalCreated++;
-    } else {
-      doc.name = item.name;
-      doc.normalizedName = identityPart(item.name);
-      doc.category = item.category;
-      doc.brand = item.brand || "";
-      doc.unit = item.unit;
-      doc.packSize = item.packSize || "";
-      doc.description = item.description || doc.description;
-      if (item.image) doc.image = item.image;
-      doc.aliases = Array.from(new Set([...doc.aliases, ...aliases]));
-      doc.tier = item.tier || doc.tier;
-      doc.basePrice = item.basePrice || doc.basePrice;
-      await doc.save();
-      canonicalUpdated++;
-    }
-  }
-
-  console.log(`   ✓ Predefined canonical products: ${canonicalCreated} created, ${canonicalUpdated} updated.`);
+  const catalogSeed = await seedCatalogFromJson();
+  console.log(`\n1. Imported ${catalogSeed.total} products from productCatalog.json.`);
 
   // 2. Link existing ShopProduct records to Canonical Products
   console.log("\n2. Scanning and linking all ShopProduct records...");
@@ -123,6 +74,11 @@ async function migrateCanonicalProducts() {
   let customCreatedCount = 0;
 
   for (const sp of shopProducts) {
+    if (sp.canonicalProduct) {
+      alreadyLinkedCount++;
+      continue;
+    }
+
     // Check by identity key
     const spKey = computeProductIdentityKey({
       name: sp.name,
@@ -134,66 +90,42 @@ async function migrateCanonicalProducts() {
 
     let canonical = await CanonicalProduct.findOne({ identityKey: spKey });
 
-    // Fallback: match by normalizedName and unit
+    // Link only exact identities; aliases must not collapse brands or package variants.
     if (!canonical) {
-      const normName = identityPart(sp.name);
-      canonical = await CanonicalProduct.findOne({
-        normalizedName: normName,
-        unit: sp.unit,
-      });
-    }
-
-    // Fallback: match by normalizedName and brand
-    if (!canonical && sp.brand) {
-      const normName = identityPart(sp.name);
-      canonical = await CanonicalProduct.findOne({
-        normalizedName: normName,
-        brand: new RegExp(`^${identityPart(sp.brand)}$`, "i"),
-      });
-    }
-
-    // Fallback for case/spelling/whitespace variations of simple names e.g. "eggs", "Eggs", " EGGS "
-    if (!canonical) {
-      const normName = identityPart(sp.name);
-      if (normName === "eggs" || normName === "egg") {
-        canonical = await CanonicalProduct.findOne({
-          name: /Classic Farm Fresh White Eggs/i,
-        });
-      }
-    }
-
-    // If still not matched (e.g. a custom item created previously like "2Min Maggie"),
-    // create a canonical entry for this custom product so it is preserved and shared!
-    if (!canonical) {
-      canonical = await CanonicalProduct.create({
-        name: sp.name.trim(),
-        normalizedName: identityPart(sp.name),
-        identityKey: spKey,
-        category: sp.category || "Grocery & Kirana",
-        brand: sp.brand || "",
-        unit: sp.unit || "packet",
-        packSize: sp.packSize || "",
-        description: sp.description || "",
-        image: sp.image || "",
-        aliases: generateAliases(sp),
-        tier: "popular",
-        basePrice: sp.price || 0,
-      });
+      canonical = await CanonicalProduct.findOneAndUpdate(
+        { identityKey: spKey },
+        {
+          $setOnInsert: {
+            productId: `NB-${new mongoose.Types.ObjectId().toString()}`,
+            name: sp.name.trim(),
+            normalizedName: identityPart(sp.name),
+            identityKey: spKey,
+            category: sp.category || "Grocery & Kirana",
+            brand: sp.brand || "",
+            unit: sp.unit || "packet",
+            packSize: sp.packSize || "",
+            description: sp.description || "",
+            image: sp.image || "/images/product-placeholder.svg",
+            aliases: generateAliases(sp),
+            tier: "popular",
+            basePrice: 0,
+            isActive: true,
+          },
+        },
+        { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
+      );
       customCreatedCount++;
     }
 
-    // Update ShopProduct canonical reference
-    if (!sp.canonicalProduct || sp.canonicalProduct.toString() !== canonical._id.toString()) {
-      sp.canonicalProduct = canonical._id;
-      await sp.save();
-      linkedCount++;
-    } else {
-      alreadyLinkedCount++;
-    }
+    sp.canonicalProduct = canonical._id;
+    await sp.save();
+    linkedCount++;
   }
 
   const totalCanonical = await CanonicalProduct.countDocuments();
-  const unlinkedCount = await ShopProduct.countDocuments({ canonicalProduct: null });
+  const unlinkedCount = await ShopProduct.countDocuments({
+    $or: [{ canonicalProduct: null }, { canonicalProduct: { $exists: false } }],
+  });
 
   console.log("\n=================================================");
   console.log("            MIGRATION EXECUTION SUMMARY          ");

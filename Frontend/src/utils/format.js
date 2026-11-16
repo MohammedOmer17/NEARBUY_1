@@ -50,8 +50,10 @@ export function assetUrl(path) {
 
 export function qrSrc(qr) {
   if (!qr) return ''
-  if (/^(https?:|data:)/.test(qr) || qr.startsWith('/')) return assetUrl(qr)
-  return `data:image/png;base64,${qr}`
+  const str = typeof qr === 'string' ? qr : String(qr?.url || qr?.src || '')
+  if (!str) return ''
+  if (/^(https?:|data:)/.test(str) || str.startsWith('/')) return assetUrl(str)
+  return `data:image/png;base64,${str}`
 }
 
 export const initials = (name = '') =>

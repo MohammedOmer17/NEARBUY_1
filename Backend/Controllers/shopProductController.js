@@ -70,30 +70,39 @@ const createProduct = async (req, res) => {
     let canonical = null;
     const { canonicalProductId } = req.body;
 
-    if (canonicalProductId && mongoose.Types.ObjectId.isValid(canonicalProductId)) {
-      canonical = await CanonicalProduct.findById(canonicalProductId);
+    if (canonicalProductId) {
+      if (!mongoose.Types.ObjectId.isValid(canonicalProductId)) {
+        return res.status(400).json({ message: "Invalid catalogue product ID" });
+      }
+      canonical = await CanonicalProduct.findOne({ _id: canonicalProductId, isActive: { $ne: false } });
+      if (!canonical) {
+        return res.status(404).json({ message: "Catalogue product not found" });
+      }
     }
 
+    const measurement = ShopProduct.normalizeProductUnit(req.body.unit, req.body.packSize);
     const candidateIdentityKey = computeProductIdentityKey({
       name: req.body.name,
       brand: req.body.brand || "",
       category: req.body.category || "",
-      unit: req.body.unit || "",
-      packSize: req.body.packSize || "",
+      unit: measurement.unit,
+      packSize: measurement.packSize,
     });
 
     if (!canonical) {
-      canonical = await CanonicalProduct.findOne({ identityKey: candidateIdentityKey });
-    }
-
-    if (!canonical) {
-      const normName = identityPart(req.body.name);
       canonical = await CanonicalProduct.findOne({
-        $or: [
-          { normalizedName: normName, unit: req.body.unit.trim() },
-          { aliases: normName },
-        ],
+        identityKey: candidateIdentityKey,
+        isActive: { $ne: false },
       });
+      if (!canonical) {
+        const inactiveProduct = await CanonicalProduct.findOne({
+          identityKey: candidateIdentityKey,
+          isActive: false,
+        }).select("_id");
+        if (inactiveProduct) {
+          return res.status(409).json({ message: "The matching catalogue product is inactive." });
+        }
+      }
     }
 
     // If still not found, create new shared canonical catalogue entry
@@ -108,38 +117,48 @@ const createProduct = async (req, res) => {
               identityKey: candidateIdentityKey,
               category: req.body.category.trim(),
               brand: typeof req.body.brand === "string" ? req.body.brand.trim() : "",
-              unit: req.body.unit.trim(),
-              packSize: typeof req.body.packSize === "string" ? req.body.packSize.trim() : "",
+              unit: measurement.unit,
+              packSize: measurement.packSize,
               description: typeof req.body.description === "string" ? req.body.description.trim() : "",
-              image: req.body.image || "",
+              image: req.body.image || "/images/product-placeholder.svg",
               basePrice: Number(req.body.price),
               aliases: [req.body.name.trim().toLowerCase()],
               tier: "popular",
+              isActive: true,
             },
           },
-          { upsert: true, new: true, setDefaultsOnInsert: true }
+          { upsert: true, returnDocument: "after", setDefaultsOnInsert: true }
         );
       } catch (insertErr) {
-        canonical = await CanonicalProduct.findOne({ identityKey: candidateIdentityKey });
+        canonical = await CanonicalProduct.findOne({
+          identityKey: candidateIdentityKey,
+          isActive: { $ne: false },
+        });
+        if (!canonical) throw insertErr;
       }
     }
 
     // 2. Check for intra-shop duplicate listing
-    const intraShopDuplicateConditions = [
-      {
-        name: new RegExp(`^${req.body.name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
-        unit: req.body.unit.trim(),
-      },
-    ];
-
+    let existingInShop = null;
     if (canonical) {
-      intraShopDuplicateConditions.unshift({ canonicalProduct: canonical._id });
+      existingInShop = await ShopProduct.findOne({ shop: ownerShop._id, canonicalProduct: canonical._id });
+    } else {
+      const escapedName = req.body.name.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const sameNameProducts = await ShopProduct.find({
+        shop: ownerShop._id,
+        name: new RegExp(`^${escapedName}$`, "i"),
+        unit: measurement.unit,
+      });
+      existingInShop = sameNameProducts.find((product) =>
+        computeProductIdentityKey({
+          name: product.name,
+          brand: product.brand,
+          category: product.category,
+          unit: product.unit,
+          packSize: product.packSize,
+        }) === candidateIdentityKey
+      );
     }
-
-    const existingInShop = await ShopProduct.findOne({
-      shop: ownerShop._id,
-      $or: intraShopDuplicateConditions,
-    });
 
     if (existingInShop) {
       return res.status(409).json({
@@ -157,31 +176,26 @@ const createProduct = async (req, res) => {
           ? req.body.description.trim()
           : canonical?.description || "",
       category: canonical ? canonical.category : req.body.category.trim(),
-      brand:
-        typeof req.body.brand === "string" && req.body.brand.trim()
+      brand: canonical
+        ? canonical.brand
+        : typeof req.body.brand === "string"
           ? req.body.brand.trim()
-          : canonical?.brand || "",
-      image: req.body.image || canonical?.image || "",
+          : "",
+      image: canonical?.image || req.body.image || "/images/product-placeholder.svg",
       price: Number(req.body.price),
-      unit: canonical ? canonical.unit : req.body.unit.trim(),
-      packSize:
-        typeof req.body.packSize === "string" && req.body.packSize.trim()
-          ? req.body.packSize.trim()
-          : canonical?.packSize || "",
+      unit: canonical ? canonical.unit : measurement.unit,
+      packSize: canonical ? canonical.packSize : measurement.packSize,
       quantity: Number(req.body.quantity),
       lowStockThreshold: req.body.lowStockThreshold === undefined ? 5 : Number(req.body.lowStockThreshold),
       isAvailable: Number(req.body.quantity) > 0,
     });
 
-    // If canonical product lacked an image and this listing provides one, update canonical
-    if (canonical && !canonical.image && product.image) {
-      await CanonicalProduct.findByIdAndUpdate(canonical._id, { image: product.image }).catch(() => {});
-    }
-
     await product.populate([
       { path: "shop", select: "shopName address contact status location" },
       { path: "canonicalProduct" },
     ]);
+
+    invalidateShopCache(ownerShop._id);
 
     return res.status(201).json({ message: "Product created successfully", product });
   } catch (error) {
@@ -197,6 +211,18 @@ const createProduct = async (req, res) => {
   }
 };
 
+// In-memory cache for fast shop product retrieval
+const shopProductsCache = new Map();
+const CACHE_TTL_MS = 60 * 1000;
+
+const invalidateShopCache = (shopId) => {
+  if (shopId) {
+    shopProductsCache.delete(String(shopId));
+  } else {
+    shopProductsCache.clear();
+  }
+};
+
 const getShopProducts = async (req, res) => {
   const { shopId } = req.params;
 
@@ -204,8 +230,18 @@ const getShopProducts = async (req, res) => {
     return res.status(400).json({ message: "Invalid shop ID" });
   }
 
+  const { category, search, availability, countOnly, page, limit } = req.query;
+
+  // Serve from in-memory cache for default full-shop queries to deliver sub-millisecond responses
+  const isDefaultQuery = !category && !search && availability === undefined && !countOnly && !page && !limit;
+  if (isDefaultQuery) {
+    const cached = shopProductsCache.get(String(shopId));
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return res.status(200).json(cached.data);
+    }
+  }
+
   const filter = { shop: shopId };
-  const { category, search, availability } = req.query;
 
   if (category) {
     filter.category = new RegExp(String(category).trim(), "i");
@@ -220,13 +256,13 @@ const getShopProducts = async (req, res) => {
   }
 
   try {
-    if (req.query.countOnly === "true") {
+    if (countOnly === "true") {
       const count = await ShopProduct.countDocuments(filter);
       return res.status(200).json({ count, totalCount: count });
     }
 
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const limit = req.query.limit !== undefined ? Math.min(200, Math.max(1, Number(req.query.limit))) : null;
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = limit !== undefined ? Math.min(200, Math.max(1, Number(limit))) : null;
 
     let queryBuilder = ShopProduct.find(filter)
       .sort({ createdAt: -1 })
@@ -234,12 +270,36 @@ const getShopProducts = async (req, res) => {
       .populate("canonicalProduct", "name normalizedName category brand unit packSize image basePrice tier")
       .lean();
 
-    if (limit) {
-      queryBuilder = queryBuilder.skip((page - 1) * limit).limit(limit);
+    if (limitNum) {
+      queryBuilder = queryBuilder.skip((pageNum - 1) * limitNum).limit(limitNum);
     }
 
-    const products = await queryBuilder;
-    return res.status(200).json({ products, totalCount: products.length });
+    const rawProducts = await queryBuilder;
+
+    // Strict deduplication safeguard: ensure no shop ever returns duplicate cards for the same product
+    const uniqueProducts = [];
+    const seen = new Set();
+    for (const p of rawProducts) {
+      const canonId = p.canonicalProduct?._id || p.canonicalProduct;
+      const key = canonId
+        ? `c:${String(canonId)}`
+        : `n:${(p.name || '').trim().toLowerCase()}|${(p.unit || '').trim().toLowerCase()}|${(p.packSize || '').trim().toLowerCase()}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueProducts.push(p);
+      }
+    }
+
+    const responsePayload = { products: uniqueProducts, totalCount: uniqueProducts.length };
+
+    if (isDefaultQuery) {
+      shopProductsCache.set(String(shopId), {
+        data: responsePayload,
+        timestamp: Date.now(),
+      });
+    }
+
+    return res.status(200).json(responsePayload);
   } catch (error) {
     console.error("Fetch shop products failed:", error);
     return res.status(500).json({ message: "Unable to retrieve products" });
@@ -328,6 +388,7 @@ const getProductOffers = async (req, res) => {
 
     const refName = canonical ? canonical.name : targetProduct.name;
     const refUnit = canonical ? canonical.unit : targetProduct.unit;
+    const refPackSize = canonical ? canonical.packSize : targetProduct.packSize;
     const refBrand = canonical?.brand || targetProduct?.brand;
     const refCategory = canonical?.category || targetProduct?.category;
 
@@ -343,6 +404,7 @@ const getProductOffers = async (req, res) => {
     if (refCategory) {
       nameMatchCond.category = refCategory;
     }
+    nameMatchCond.packSize = refPackSize || "";
     matchConditions.push(nameMatchCond);
 
     const matchingProducts = await ShopProduct.find({ $or: matchConditions })
@@ -407,14 +469,14 @@ const getProductOffers = async (req, res) => {
         _id: p._id,
         id: p._id,
         canonicalProductId: canonical?._id || p.canonicalProduct?._id || null,
-        name: p.name,
-        description: p.description,
-        category: p.category,
-        brand: p.brand,
-        image: p.image || canonical?.image || "",
+        name: p.canonicalProduct?.name || p.name,
+        description: p.canonicalProduct?.description || p.description,
+        category: p.canonicalProduct?.category || p.category,
+        brand: p.canonicalProduct?.brand || p.brand,
+        image: p.canonicalProduct?.image || canonical?.image || p.image || "/images/product-placeholder.svg",
         price: p.price,
-        unit: p.unit,
-        packSize: p.packSize || canonical?.packSize || "",
+        unit: p.canonicalProduct?.unit || p.unit,
+        packSize: p.canonicalProduct?.packSize || p.packSize || canonical?.packSize || "",
         isAvailable: p.isAvailable && p.quantity > 0,
         available: p.isAvailable && p.quantity > 0,
         distanceKm,
@@ -456,7 +518,7 @@ const getProductOffers = async (req, res) => {
         description: canonical?.description || targetProduct.description,
         category: canonical?.category || targetProduct.category,
         brand: canonical?.brand || targetProduct.brand,
-        image: targetProduct.image || canonical?.image || "",
+        image: canonical?.image || targetProduct.image || "/images/product-placeholder.svg",
         unit: canonical?.unit || targetProduct.unit,
         packSize: canonical?.packSize || targetProduct.packSize || "",
         price: offers[0] ? offers[0].price : targetProduct.price,
@@ -546,6 +608,7 @@ const updateProduct = async (req, res) => {
 
     Object.assign(product, updates);
     await product.save();
+    invalidateShopCache(ownerShop._id);
 
     return res.status(200).json({ message: "Product updated successfully", product });
   } catch (error) {
@@ -580,6 +643,8 @@ const deleteProduct = async (req, res) => {
     if (!product) {
       return res.status(404).json({ message: "Product not found for this shop" });
     }
+
+    invalidateShopCache(ownerShop._id);
 
     return res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
@@ -622,6 +687,7 @@ const updateProductStock = async (req, res) => {
     product.quantity = parsedQuantity;
     product.isAvailable = parsedQuantity > 0;
     await product.save();
+    invalidateShopCache(ownerShop._id);
 
     return res.status(200).json({
       message: "Product stock updated successfully",

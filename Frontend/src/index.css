@@ -3,32 +3,37 @@
 @theme {
   --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
 
-  --color-brand-50: #f5f0ff;
-  --color-brand-100: #e9defd;
-  --color-brand-200: #d5bffb;
-  --color-brand-500: #7c3aed;
-  --color-brand-600: #6d28d9;
-  --color-brand-700: #5b21b6;
-  --color-brand-900: #2a0f5c;
+  --color-brand-50: #2b1b2d;
+  --color-brand-100: #3f2244;
+  --color-brand-200: #6d3372;
+  --color-brand-500: #ec55c8;
+  --color-brand-600: #b65dda;
+  --color-brand-700: #9333ea;
+  --color-brand-900: #170f1b;
 
-  --color-accent-50: #fff0f6;
-  --color-accent-500: #e91e78;
+  --color-accent-50: #2b1b2d;
+  --color-accent-500: #ec55c8;
   --color-accent-600: #cf1469;
 
-  --color-canvas: #f7f6fb;
-  --color-ink: #1a1530;
-  --color-mute: #6e6a85;
-  --color-line: #ece8f6;
+  --color-canvas: #100a14;
+  --color-secondary-bg: #170f1b;
+  --color-surface: #211522;
+  --color-surface-elevated: #2b1b2d;
+  --color-ink: #ffffff;
+  --color-subtext: #c4b4c9;
+  --color-mute: #94849a;
+  --color-line: #593650;
 
-  --color-ok: #15803d;
-  --color-ok-50: #ecfdf3;
-  --color-warn: #b45309;
-  --color-warn-50: #fff7ed;
-  --color-danger: #dc2626;
-  --color-danger-50: #fef2f2;
+  --color-ok: #20c878;
+  --color-ok-50: rgba(32, 200, 120, 0.12);
+  --color-warn: #f5a623;
+  --color-warn-50: rgba(245, 166, 35, 0.12);
+  --color-danger: #f05a79;
+  --color-danger-50: rgba(240, 90, 121, 0.12);
 
-  --shadow-card: 0 1px 2px rgb(26 21 48 / 0.04), 0 4px 16px rgb(26 21 48 / 0.05);
-  --shadow-float: 0 10px 28px rgb(42 15 92 / 0.2);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 10px 32px rgba(236, 85, 200, 0.22);
+  --shadow-glow: 0 0 25px rgba(236, 85, 200, 0.25);
 
   --animate-sheet: sheet-in 0.22s ease-out;
   --animate-fade: fade-in 0.18s ease-out;
@@ -40,11 +45,11 @@
 }
 
 @layer base {
-  html { -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
-  body { @apply bg-[#e8e5f2] font-sans text-ink antialiased; margin: 0; }
+  html { -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; color-scheme: dark; }
+  body { @apply bg-[#100a14] font-sans text-ink antialiased selection:bg-pink-500/30 selection:text-white; margin: 0; }
   button, a { touch-action: manipulation; }
-  :focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 2px; }
-  input, textarea, select { font-size: 16px; }
+  :focus-visible { outline: 2px solid var(--color-accent-500); outline-offset: 2px; }
+  input, textarea, select { font-size: 16px; color-scheme: dark; }
 }
 
 @utility no-scrollbar {

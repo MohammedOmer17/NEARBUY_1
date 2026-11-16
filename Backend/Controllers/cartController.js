@@ -8,8 +8,8 @@ const getCustomerCart = async (customerId) => {
     .populate({
       path: "items.product",
       populate: {
-        path: "shop",
-        select: "shopName address contact status",
+        path: "canonicalProduct",
+        select: "name category brand unit packSize image",
       },
     });
 };
@@ -97,6 +97,8 @@ const addToCart = async (req, res) => {
       existingItem.name = product.name;
       existingItem.unit = product.unit;
       existingItem.price = product.price;
+      existingItem.image = product.image || "/images/product-placeholder.svg";
+      existingItem.category = product.category;
     } else {
       cart.items.push({
         product: product._id,
@@ -104,6 +106,8 @@ const addToCart = async (req, res) => {
         quantity: requestedQuantity,
         unit: product.unit,
         price: product.price,
+        image: product.image || "/images/product-placeholder.svg",
+        category: product.category,
       });
     }
 
@@ -167,6 +171,8 @@ const updateCartItem = async (req, res) => {
     cart.items[itemIndex].name = product.name;
     cart.items[itemIndex].unit = product.unit;
     cart.items[itemIndex].price = product.price;
+    cart.items[itemIndex].image = product.image || "/images/product-placeholder.svg";
+    cart.items[itemIndex].category = product.category;
 
     await cart.save();
 

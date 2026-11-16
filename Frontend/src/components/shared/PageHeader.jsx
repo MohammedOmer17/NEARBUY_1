@@ -56,11 +56,11 @@ export default function PageHeader({
         type="button"
         onClick={openCart}
         aria-label={`Cart, ${itemCount} items`}
-        className="relative grid h-10 w-10 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+        className="relative grid h-10 w-10 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white hover:border-[#EC55C8] transition active:scale-95 shadow-sm"
       >
-        <ShoppingBag className="h-5 w-5" />
+        <ShoppingBag className="h-5 w-5 text-white" />
         {itemCount > 0 && (
-          <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent-500 px-1 text-[11px] font-bold text-white shadow">
+          <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] px-1 text-[11px] font-bold text-white shadow">
             {itemCount}
           </span>
         )}
@@ -68,17 +68,17 @@ export default function PageHeader({
     ) : null
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-white/90 px-3 pt-[env(safe-area-inset-top)] backdrop-blur">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-[#593650] bg-[#100A14]/95 px-3 pt-[env(safe-area-inset-top)] backdrop-blur text-white">
       {back && (
         <button
           onClick={goBack}
           aria-label="Go back"
-          className="grid h-10 w-10 place-items-center rounded-full active:bg-canvas"
+          className="grid h-10 w-10 place-items-center rounded-full text-white hover:bg-white/10 active:scale-95 transition"
         >
-          <ChevronLeft className="h-6 w-6" />
+          <ChevronLeft className="h-6 w-6 text-white" />
         </button>
       )}
-      <h1 className={`min-w-0 flex-1 truncate text-lg font-bold ${back ? '' : 'pl-2'}`}>{title}</h1>
+      <h1 className={`min-w-0 flex-1 truncate text-lg font-black text-white ${back ? '' : 'pl-2'}`}>{title}</h1>
       {right !== undefined ? right : defaultRight}
     </header>
   )

@@ -186,50 +186,55 @@ export default function CaptainProfilePage() {
   }
 
   return (
-    <div className="pb-24">
-      <PageHeader title="Captain Profile" back={false} />
+    <div className="pb-28 text-white">
+      <PageHeader title="Profile & Settings" back={false} />
 
-      <div className="space-y-4 p-4">
+      <div className="mx-auto max-w-4xl space-y-4 p-4">
         {/* Messages */}
         {msg && (
-          <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 p-3 text-xs text-emerald-800">
-            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+          <div className="flex items-center gap-2 rounded-2xl bg-emerald-950/60 border border-emerald-800/80 p-3 text-xs text-emerald-200">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-[#20C878]" />
             <span>{msg}</span>
           </div>
         )}
         {error && (
-          <div className="flex items-center gap-2 rounded-2xl bg-rose-50 p-3 text-xs text-rose-800">
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+          <div className="flex items-center gap-2 rounded-2xl bg-rose-950/60 border border-rose-800/80 p-3 text-xs text-rose-200">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Profile Card */}
-        <div className="rounded-3xl bg-white p-5 shadow-card">
+        {/* Profile Card matching Screen 13 */}
+        <div className="rounded-3xl border border-[#593650] bg-[#211522] p-5 shadow-card">
           <div className="flex items-center gap-4">
-            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-tr from-brand-600 via-pink-600 to-purple-800 text-2xl font-black text-white shadow-md">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-tr from-[#EC55C8] to-[#B65DDA] text-2xl font-black text-white shadow-md">
               {(captain?.name || 'C').slice(0, 1).toUpperCase()}
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="truncate text-lg font-black text-ink">{captain?.name || 'Captain Partner'}</h2>
-              <p className="truncate text-xs text-mute">{captain?.email || 'captain@nearbuy.local'}</p>
-              <p className="text-xs text-mute mt-0.5">{captain?.phone || '+91 98765 43210'}</p>
+              <div className="flex items-center gap-2">
+                <h2 className="truncate text-lg font-black text-white">{captain?.name || 'Captain Partner'}</h2>
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-950/60 border border-[#20C878]/30 px-2 py-0.5 text-[10px] font-bold text-[#20C878]">
+                  <ShieldCheck className="h-3 w-3" /> Verified
+                </span>
+              </div>
+              <p className="truncate text-xs text-[#94849A] mt-0.5">{captain?.email || 'captain@nearbuy.local'}</p>
+              <p className="text-xs text-[#C4B4C9] mt-0.5">{captain?.phone || '+91 98765 43210'}</p>
             </div>
           </div>
 
-          {/* Duty status toggle button */}
-          <div className="mt-4 flex items-center justify-between rounded-2xl bg-canvas p-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-ink">
-              <Power className={`h-4 w-4 ${isOnline ? 'text-emerald-500' : 'text-slate-400'}`} />
-              <span>Duty Status</span>
+          {/* Duty status toggle button matching Screen 12 */}
+          <div className="mt-4 flex items-center justify-between rounded-2xl border border-[#593650] bg-[#170F1B] p-3.5">
+            <div className="flex items-center gap-2 text-xs font-semibold text-white">
+              <Power className={`h-4 w-4 ${isOnline ? 'text-[#20C878]' : 'text-[#94849A]'}`} />
+              <span>{isOnline ? 'I am Online' : 'I am Offline'}</span>
             </div>
             <button
               type="button"
               onClick={handleToggleOnline}
-              className={`rounded-full px-3 py-1 text-xs font-bold transition shadow-sm ${
+              className={`rounded-full px-4 py-1.5 text-xs font-bold transition shadow-sm ${
                 isOnline
-                  ? 'bg-emerald-500 text-white ring-2 ring-emerald-300'
-                  : 'bg-slate-200 text-slate-700'
+                  ? 'bg-[#20C878] text-black font-black'
+                  : 'bg-[#2B1B2D] border border-[#593650] text-[#94849A]'
               }`}
             >
               {isOnline ? 'ONLINE' : 'OFFLINE'}
@@ -237,30 +242,30 @@ export default function CaptainProfilePage() {
           </div>
         </div>
 
-        {/* Service Areas (Locality Selection) */}
-        <div className="rounded-3xl bg-white p-5 shadow-card">
+        {/* Service Areas (Locality Selection) matching Screen 12 "Preferred Zones" */}
+        <div className="rounded-3xl border border-[#593650] bg-[#211522] p-5 shadow-card">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4 text-brand-600" />
-              <h3 className="text-sm font-bold text-ink">Service Delivery Areas</h3>
+              <MapPin className="h-4 w-4 text-[#EC55C8]" />
+              <h3 className="text-sm font-bold text-white">Preferred Delivery Zones</h3>
             </div>
             {areasChanged && (
-              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold text-amber-400 bg-amber-950/60 border border-amber-600/40 px-2 py-0.5 rounded-full">
                 Unsaved changes
               </span>
             )}
           </div>
-          <p className="text-xs text-mute mb-3">
-            Choose your active localities (e.g. Mehdipatnam, Abids, Murad Nagar). You will only receive delivery dispatch offers for orders within your configured areas.
+          <p className="text-xs text-[#94849A] mb-3">
+            Choose your active localities (e.g. Mehdipatnam, Abids, Tolichowki). You will receive delivery dispatch offers for orders within your configured zones.
           </p>
 
           {/* Active Selected Areas */}
           <div className="mb-4">
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-mute mb-2">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#94849A] mb-2">
               Active Coverage Areas ({serviceAreas.length})
             </label>
             {serviceAreas.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 p-4 text-center text-xs text-mute">
+              <div className="rounded-2xl border border-dashed border-[#593650] bg-[#170F1B]/50 p-4 text-center text-xs text-[#94849A]">
                 No delivery areas selected yet. Search and add localities below to start receiving order dispatches.
               </div>
             ) : (
@@ -270,17 +275,17 @@ export default function CaptainProfilePage() {
                   return (
                     <div
                       key={id}
-                      className="inline-flex items-center gap-1.5 rounded-2xl bg-brand-50 border border-brand-100 px-3 py-1.5 text-xs font-semibold text-brand-900 shadow-sm"
+                      className="inline-flex items-center gap-1.5 rounded-2xl bg-pink-950/60 border border-[#EC55C8]/40 px-3 py-1.5 text-xs font-semibold text-white shadow-sm"
                     >
-                      <MapPin className="h-3 w-3 text-brand-600 shrink-0" />
+                      <MapPin className="h-3 w-3 text-[#EC55C8] shrink-0" />
                       <span>{sa.name}</span>
                       {sa.zone && (
-                        <span className="text-[10px] text-brand-600/80 font-normal">({sa.zone})</span>
+                        <span className="text-[10px] text-[#C4B4C9] font-normal">({sa.zone})</span>
                       )}
                       <button
                         type="button"
                         onClick={() => handleRemoveServiceArea(id)}
-                        className="ml-1 rounded-full p-0.5 text-brand-500 hover:bg-brand-100 hover:text-brand-800 transition-colors"
+                        className="ml-1 rounded-full p-0.5 text-[#EC55C8] hover:bg-[#EC55C8]/20 transition-colors"
                         title="Remove area"
                       >
                         <Trash2 className="h-3 w-3" />
@@ -294,17 +299,17 @@ export default function CaptainProfilePage() {
 
           {/* Add Locality Search & Quick Chips */}
           <div className="space-y-2">
-            <label className="block text-[11px] font-bold uppercase tracking-wider text-mute">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-[#94849A]">
               Add Verified Localities
             </label>
             <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-mute" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-[#94849A]" />
               <input
                 type="text"
                 value={localitySearch}
                 onChange={(e) => setLocalitySearch(e.target.value)}
                 placeholder="Search localities (e.g. Mehdipatnam, Abids, Tolichowki)..."
-                className="w-full rounded-2xl border border-slate-200 bg-canvas pl-9 pr-3 py-2.5 text-xs font-medium text-ink focus:border-brand-600 focus:bg-white focus:outline-none transition-colors"
+                className="w-full rounded-2xl border border-[#593650] bg-[#170F1B] pl-9 pr-3 py-2.5 text-xs font-medium text-white placeholder-[#94849A] focus:border-[#EC55C8] focus:bg-[#211522] focus:outline-none transition-colors"
               />
             </div>
 
@@ -328,9 +333,9 @@ export default function CaptainProfilePage() {
                     key={loc.id}
                     type="button"
                     onClick={() => handleAddServiceArea(loc)}
-                    className="inline-flex items-center gap-1 rounded-xl bg-slate-100 hover:bg-brand-50 hover:text-brand-700 px-2.5 py-1 text-xs font-medium text-slate-700 border border-transparent hover:border-brand-200 transition-colors"
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#170F1B] hover:bg-[#2B1B2D] px-2.5 py-1 text-xs font-medium text-[#C4B4C9] hover:text-white border border-[#593650] transition-colors"
                   >
-                    <Plus className="h-3 w-3" />
+                    <Plus className="h-3 w-3 text-[#EC55C8]" />
                     <span>{loc.name}</span>
                   </button>
                 ))}
@@ -338,7 +343,7 @@ export default function CaptainProfilePage() {
           </div>
 
           {/* Save Button */}
-          <div className="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+          <div className="mt-4 pt-3 border-t border-[#593650]/50 flex justify-end">
             <Button
               type="button"
               variant="primary"
@@ -350,11 +355,13 @@ export default function CaptainProfilePage() {
             </Button>
           </div>
         </div>
-        <div className="rounded-3xl bg-white p-5 shadow-card">
+
+        {/* Vehicle Details Card */}
+        <div className="rounded-3xl border border-[#593650] bg-[#211522] p-5 shadow-card">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Bike className="h-4 w-4 text-brand-600" />
-              <h3 className="text-sm font-bold text-ink">Delivery Vehicle</h3>
+              <Bike className="h-4 w-4 text-[#EC55C8]" />
+              <h3 className="text-sm font-bold text-white">Vehicle Details</h3>
             </div>
             {!isEditingVehicle && (
               <button
@@ -365,7 +372,7 @@ export default function CaptainProfilePage() {
                   setVehicleNumber(captain?.vehicle?.number || '')
                   setIsEditingVehicle(true)
                 }}
-                className="text-xs font-bold text-brand-600 hover:text-brand-700"
+                className="text-xs font-bold text-[#EC55C8] hover:text-[#F58AD8]"
               >
                 Edit
               </button>
@@ -375,11 +382,11 @@ export default function CaptainProfilePage() {
           {isEditingVehicle ? (
             <form onSubmit={handleSaveVehicle} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-ink mb-1">Vehicle Type</label>
+                <label className="block text-xs font-semibold text-[#C4B4C9] mb-1">Vehicle Type</label>
                 <select
                   value={vehicleType}
                   onChange={(e) => setVehicleType(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white p-3 text-xs font-semibold text-ink focus:border-brand-600 focus:outline-none"
+                  className="w-full rounded-2xl border border-[#593650] bg-[#170F1B] p-3 text-xs font-semibold text-white focus:border-[#EC55C8] focus:outline-none"
                 >
                   <option value="bike">Motorcycle (Bike)</option>
                   <option value="scooter">Scooter / Scooty</option>
@@ -400,7 +407,7 @@ export default function CaptainProfilePage() {
                 label="Plate Number"
                 value={vehicleNumber}
                 onChange={(e) => setVehicleNumber(e.target.value)}
-                placeholder="e.g. MH02AB1234"
+                placeholder="e.g. TS 09 XX 1234"
                 required
               />
 
@@ -426,22 +433,22 @@ export default function CaptainProfilePage() {
             </form>
           ) : (
             <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between rounded-xl bg-canvas p-3">
-                <span className="text-mute">Type</span>
-                <span className="font-bold capitalize text-ink">
+              <div className="flex items-center justify-between rounded-xl border border-[#593650] bg-[#170F1B] p-3">
+                <span className="text-[#94849A]">Type</span>
+                <span className="font-bold capitalize text-white">
                   {captain?.vehicle?.type || 'Motorcycle (Bike)'}
                 </span>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-canvas p-3">
-                <span className="text-mute">Model</span>
-                <span className="font-bold text-ink">
+              <div className="flex items-center justify-between rounded-xl border border-[#593650] bg-[#170F1B] p-3">
+                <span className="text-[#94849A]">Model</span>
+                <span className="font-bold text-white">
                   {captain?.vehicle?.model || 'Hero Splendor'}
                 </span>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-canvas p-3">
-                <span className="text-mute">Plate Number</span>
-                <span className="font-bold font-mono text-ink">
-                  {captain?.vehicle?.number || 'MH02AB1234'}
+              <div className="flex items-center justify-between rounded-xl border border-[#593650] bg-[#170F1B] p-3">
+                <span className="text-[#94849A]">Plate Number</span>
+                <span className="font-bold font-mono text-[#EC55C8]">
+                  {captain?.vehicle?.number || 'TS 09 XX 1234'}
                 </span>
               </div>
             </div>
@@ -449,17 +456,17 @@ export default function CaptainProfilePage() {
         </div>
 
         {/* Change Password */}
-        <div className="rounded-3xl bg-white p-5 shadow-card">
+        <div className="rounded-3xl border border-[#593650] bg-[#211522] p-5 shadow-card">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-brand-600" />
-              <h3 className="text-sm font-bold text-ink">Security & Password</h3>
+              <Lock className="h-4 w-4 text-[#EC55C8]" />
+              <h3 className="text-sm font-bold text-white">Security & Password</h3>
             </div>
             {!showPasswordChange && (
               <button
                 type="button"
                 onClick={() => setShowPasswordChange(true)}
-                className="text-xs font-bold text-brand-600 hover:text-brand-700"
+                className="text-xs font-bold text-[#EC55C8] hover:text-[#F58AD8]"
               >
                 Change
               </button>
@@ -509,30 +516,30 @@ export default function CaptainProfilePage() {
               </div>
             </form>
           ) : (
-            <p className="text-xs text-mute">
+            <p className="text-xs text-[#94849A]">
               Keep your partner account secure. Update your password regularly.
             </p>
           )}
         </div>
 
         {/* Role Switcher */}
-        <div className="rounded-3xl bg-white p-5 shadow-card">
-          <h3 className="text-sm font-bold text-ink mb-2">Switch NearBuy Mode</h3>
-          <p className="text-xs text-mute mb-3">
+        <div className="rounded-3xl border border-[#593650] bg-[#211522] p-5 shadow-card">
+          <h3 className="text-sm font-bold text-white mb-2">Switch NearBuy Mode</h3>
+          <p className="text-xs text-[#94849A] mb-3">
             Access customer shopping or merchant store partner dashboards.
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Link
               to={ROUTES.home}
-              className="flex items-center justify-center gap-1.5 rounded-2xl bg-canvas p-3 text-xs font-bold text-ink hover:bg-slate-100 transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-2xl border border-[#593650] bg-[#170F1B] p-3 text-xs font-bold text-white hover:bg-[#2B1B2D] transition-colors"
             >
-              <ArrowRightLeft className="h-3.5 w-3.5 text-brand-600" /> Customer App
+              <ArrowRightLeft className="h-3.5 w-3.5 text-[#EC55C8]" /> Customer App
             </Link>
             <Link
               to={ROUTES.ownerLogin}
-              className="flex items-center justify-center gap-1.5 rounded-2xl bg-canvas p-3 text-xs font-bold text-ink hover:bg-slate-100 transition-colors"
+              className="flex items-center justify-center gap-1.5 rounded-2xl border border-[#593650] bg-[#170F1B] p-3 text-xs font-bold text-white hover:bg-[#2B1B2D] transition-colors"
             >
-              <ArrowRightLeft className="h-3.5 w-3.5 text-brand-600" /> Shop Owner App
+              <ArrowRightLeft className="h-3.5 w-3.5 text-[#EC55C8]" /> Shop Owner App
             </Link>
           </div>
         </div>

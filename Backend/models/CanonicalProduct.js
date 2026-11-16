@@ -7,12 +7,18 @@ const identityPart = (value) =>
     .toLowerCase()
     .replace(/\s+/g, " ");
 
+const normalizePackSize = (value) =>
+  identityPart(value).replace(
+    /(\d+(?:\.\d+)?)\s+(kg|g|ltr|l|ml|pc|pcs|piece|pieces)\b/g,
+    "$1$2"
+  );
+
 function computeProductIdentityKey({ name, brand = "", category = "", unit = "", packSize = "" }) {
   const normName = identityPart(name);
   const normBrand = identityPart(brand);
   const normCategory = identityPart(category);
   const normUnit = identityPart(unit);
-  const normPack = identityPart(packSize);
+  const normPack = normalizePackSize(packSize);
 
   const brandOrCat = normBrand || normCategory;
   return [normName, brandOrCat, normUnit, normPack].join("|");
@@ -29,6 +35,12 @@ const canonicalProductSchema = new mongoose.Schema(
         message: "Canonical product name cannot be empty",
       },
     },
+    productId: {
+      type: String,
+      index: { unique: true, sparse: true, name: "catalogProductId_unique" },
+      trim: true,
+      default: () => `NB-${new mongoose.Types.ObjectId().toString()}`,
+    },
     normalizedName: {
       type: String,
       required: true,
@@ -41,7 +53,6 @@ const canonicalProductSchema = new mongoose.Schema(
       required: true,
       unique: true,
       trim: true,
-      index: true,
     },
     category: {
       type: String,
@@ -72,6 +83,11 @@ const canonicalProductSchema = new mongoose.Schema(
     image: {
       type: String,
       default: "",
+    },
+    isActive: {
+      type: Boolean,
+      default: true,
+      index: true,
     },
     aliases: {
       type: [String],
@@ -113,11 +129,17 @@ canonicalProductSchema.index({
   aliases: "text",
   category: "text",
 });
+canonicalProductSchema.index({ category: 1, isActive: 1 });
 
 const CanonicalProduct = mongoose.model("CanonicalProduct", canonicalProductSchema);
+const CatalogProduct =
+  mongoose.models.CatalogProduct ||
+  mongoose.model("CatalogProduct", canonicalProductSchema, CanonicalProduct.collection.name);
 
 module.exports = {
   CanonicalProduct,
+  CatalogProduct,
   computeProductIdentityKey,
   identityPart,
+  normalizePackSize,
 };

@@ -15,7 +15,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/143/400/0318/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Long grain aromatic basmati rice suitable for everyday pulao, jeera rice, and biryani.",
     "basePrice": 115,
     "tier": "staple",
@@ -38,7 +38,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/143/400/0288/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Premium aged long-grain basmati rice with exquisite aroma and slender grains for celebratory feasts.",
     "basePrice": 165,
     "tier": "popular",
@@ -61,7 +61,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0048/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Fluffy and non-sticky basmati rice ideal for daily family meals and fried rice.",
     "basePrice": 95,
     "tier": "staple",
@@ -84,7 +84,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/504/300/0017/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Long grain basmati rice processed for rich aroma and authentic texture.",
     "basePrice": 110,
     "tier": "popular",
@@ -107,7 +107,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/700/8114/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Authentic lightweight and aromatic South Indian Sona Masoori rice for daily lunch and dinner.",
     "basePrice": 320,
     "tier": "staple",
@@ -130,7 +130,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/White_rice.jpg/320px-White_rice.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Cleaned and sorted medium-grain polished Sona Masoori rice for daily cooking.",
     "basePrice": 68,
     "tier": "staple",
@@ -153,7 +153,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/White_rice.jpg/320px-White_rice.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Short, thick grain parboiled rice specially milled for soft, spongy idlis and crisp dosas.",
     "basePrice": 62,
     "tier": "staple",
@@ -176,7 +176,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/118/901/5005/front_en.4.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "100% certified organic unpolished brown rice rich in natural fiber and essential nutrients.",
     "basePrice": 110,
     "tier": "specialty",
@@ -199,7 +199,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Clean, thick flattened rice flakes ideal for Hyderabad-style kanda poha and quick breakfast snacks.",
     "basePrice": 45,
     "tier": "staple",
@@ -220,7 +220,7 @@
       "tata sampann",
       "white poha"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "High dietary fiber beaten rice flakes made from premium paddy for healthy breakfast treats.",
     "basePrice": 52,
     "tier": "popular",
@@ -244,7 +244,7 @@
       "flour",
       "aata"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0024/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "100% whole wheat stone-ground chakki flour that absorbs more water for rotis that stay soft longer.",
     "basePrice": 245,
     "tier": "staple",
@@ -268,7 +268,7 @@
       "flour",
       "aata"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0017/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "100% whole wheat chakki flour for soft and wholesome chapatis.",
     "basePrice": 52,
     "tier": "staple",
@@ -292,7 +292,7 @@
       "flour",
       "aata"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0024/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Crafted from 100% pure MP Sharbati wheat grains, making chapatis exceptionally soft and golden.",
     "basePrice": 295,
     "tier": "popular",
@@ -316,7 +316,7 @@
       "flour",
       "aata"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0048/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Naturally ground whole wheat atta that delivers high dietary fiber and soft rotis.",
     "basePrice": 230,
     "tier": "staple",
@@ -340,7 +340,7 @@
       "flour",
       "aata"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/700/0012/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Traditional stone ground whole wheat flour locking in natural taste and softness for 6 hours.",
     "basePrice": 240,
     "tier": "popular",
@@ -364,7 +364,7 @@
       "flour",
       "aata"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0024/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Wholesome blend of 6 grains (wheat, soya, chana, oat, maize, and psyllium husk) high in protein.",
     "basePrice": 68,
     "tier": "popular",
@@ -387,7 +387,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Ground purely from unpolished chana dal for rich aroma, lump-free batter, and crispy pakodas.",
     "basePrice": 65,
     "tier": "staple",
@@ -408,7 +408,7 @@
       "fortune",
       "besan"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0048/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Finely ground gram flour made from premium grade chickpeas for snacks and sweets.",
     "basePrice": 60,
     "tier": "staple",
@@ -429,7 +429,7 @@
       "rajdhani",
       "maida"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Wheat_flour_1.jpg/320px-Wheat_flour_1.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Fine all-purpose refined wheat flour ideal for bhaturas, parottas, samosas, and baking.",
     "basePrice": 48,
     "tier": "staple",
@@ -450,7 +450,7 @@
       "aashirvaad",
       "roasted sooji rava"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0017/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Hygienically pre-roasted semolina rava made from selected durum wheat for quick upma and halwa.",
     "basePrice": 42,
     "tier": "staple",
@@ -473,7 +473,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Naturally unpolished pigeon pea dal that retains its authentic flavor and nutritional value.",
     "basePrice": 175,
     "tier": "staple",
@@ -496,7 +496,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0048/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "High protein unpolished arhar/toor dal for wholesome sambar and tadka dal.",
     "basePrice": 168,
     "tier": "staple",
@@ -519,7 +519,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Unpolished split yellow moong dal for easy digestion and quick cooking khichdi.",
     "basePrice": 145,
     "tier": "staple",
@@ -542,7 +542,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Dal-makhani.jpg/320px-Dal-makhani.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Cleaned split yellow gram dal rich in dietary fiber and essential vitamins.",
     "basePrice": 140,
     "tier": "popular",
@@ -565,7 +565,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Dal-makhani.jpg/320px-Dal-makhani.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Whole green gram / sabut moong pulse rich in protein and excellent for sprouting.",
     "basePrice": 78,
     "tier": "popular",
@@ -588,7 +588,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Unpolished Bengal gram split dal providing delicious taste in curries, snacks, and vada batter.",
     "basePrice": 110,
     "tier": "staple",
@@ -611,7 +611,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Dal-makhani.jpg/320px-Dal-makhani.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Wholesome chana dal sourced from select farms for rich nutty texture and flavor.",
     "basePrice": 105,
     "tier": "popular",
@@ -634,7 +634,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Split black gram with peel-free white lentil interior, essential for idli and dosa fermenting batter.",
     "basePrice": 155,
     "tier": "staple",
@@ -655,7 +655,7 @@
       "fortune",
       "urad gota whole"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Dal-makhani.jpg/320px-Dal-makhani.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Whole white urad gota dal yielding superior fermentation and fluffy South Indian breakfast batters.",
     "basePrice": 165,
     "tier": "staple",
@@ -678,7 +678,7 @@
       "daal",
       "pappu"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Unpolished red split lentils that cook quickly into a creamy, comforting dal tadka.",
     "basePrice": 105,
     "tier": "staple",
@@ -702,7 +702,7 @@
       "cooking oil",
       "meetha tel"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0048/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Light and healthy refined sunflower oil enriched with Vitamins A, D, and E for daily cooking.",
     "basePrice": 145,
     "tier": "staple",
@@ -726,7 +726,7 @@
       "cooking oil",
       "meetha tel"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Sunflower_oil_and_sunflower_notext.jpg/320px-Sunflower_oil_and_sunflower_notext.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Healthy refined sunflower cooking oil fortified with essential Nutri-Vitamins.",
     "basePrice": 142,
     "tier": "staple",
@@ -750,7 +750,7 @@
       "cooking oil",
       "meetha tel"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Sunflower_oil_and_sunflower_notext.jpg/320px-Sunflower_oil_and_sunflower_notext.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Clear and non-sticky refined sunflower cooking oil widely trusted in Telugu households.",
     "basePrice": 140,
     "tier": "staple",
@@ -774,7 +774,7 @@
       "cooking oil",
       "meetha tel"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/127/700/0019/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Blended cooking oil with Rice Bran and Sunflower oils containing natural antioxidants and Oryzanol.",
     "basePrice": 175,
     "tier": "popular",
@@ -800,7 +800,7 @@
       "sarson",
       "rai"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0048/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Cold-pressed pure kachi ghani sarson oil with pungency and natural Omega-3 fatty acids.",
     "basePrice": 155,
     "tier": "popular",
@@ -826,7 +826,7 @@
       "chawal",
       "chaawal"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Sunflower_oil_and_sunflower_notext.jpg/320px-Sunflower_oil_and_sunflower_notext.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Physically refined 100% rice bran cooking oil with 10,000 ppm Oryzanol for heart health.",
     "basePrice": 148,
     "tier": "popular",
@@ -850,7 +850,7 @@
       "cooking oil",
       "meetha tel"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/185/400/0014/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Pure edible coconut oil made from sun-dried coconuts for traditional coastal and South Indian dishes.",
     "basePrice": 235,
     "tier": "popular",
@@ -873,7 +873,7 @@
       "asli ghee",
       "desi ghee"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Traditional aromatic clarified butter made from fresh dairy cream for festive sweets and daily dal.",
     "basePrice": 620,
     "tier": "staple",
@@ -896,7 +896,7 @@
       "asli ghee",
       "desi ghee"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Rich granulated desi ghee packed in a sturdy tin with long-lasting freshness and golden aroma.",
     "basePrice": 330,
     "tier": "staple",
@@ -919,7 +919,7 @@
       "asli ghee",
       "desi ghee"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Sunflower_oil_and_sunflower_notext.jpg/320px-Sunflower_oil_and_sunflower_notext.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Pure golden cow ghee prepared from fresh cow milk cream with unmatched traditional flavor.",
     "basePrice": 310,
     "tier": "popular",
@@ -941,7 +941,7 @@
       "turmeric powder",
       "haldi"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Sun-dried natural ground haldi powder offering vibrant golden color and rich curcumin value.",
     "basePrice": 58,
     "tier": "staple",
@@ -963,7 +963,7 @@
       "turmeric powder",
       "haldi"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Indian_Spices.jpg/320px-Indian_Spices.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Low-temperature ground turmeric powder locking in natural oils and pure earthy aroma.",
     "basePrice": 55,
     "tier": "popular",
@@ -986,7 +986,7 @@
       "mirchi",
       "lal mirch"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Fiery hot ground red chilli powder delivering sharp piquancy and vibrant red gravy color.",
     "basePrice": 95,
     "tier": "staple",
@@ -1009,7 +1009,7 @@
       "mirchi",
       "lal mirch"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Indian_Spices.jpg/320px-Indian_Spices.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Finely ground hot red mirchi powder with balanced spice level and rich appetizing red hue.",
     "basePrice": 92,
     "tier": "popular",
@@ -1030,7 +1030,7 @@
       "everest",
       "coriander powder"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Freshly pulverized green dhaniya seeds lending a subtle herbaceous aroma and thick curry base.",
     "basePrice": 62,
     "tier": "staple",
@@ -1053,7 +1053,7 @@
       "jeera",
       "zeera"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Indian_Spices.jpg/320px-Indian_Spices.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Carefully selected whole cumin seeds providing earthy aroma and crackling tadka goodness.",
     "basePrice": 75,
     "tier": "staple",
@@ -1074,7 +1074,7 @@
       "everest",
       "garam masala"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Exquisite blend of 13 whole aromatic spices ground together to elevate North and South Indian curries.",
     "basePrice": 88,
     "tier": "staple",
@@ -1095,7 +1095,7 @@
       "everest",
       "shahi biryani masala"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Hyderabadi style aromatic whole-spice masala powder crafted for rich, fragrant dum biryani.",
     "basePrice": 45,
     "tier": "staple",
@@ -1116,7 +1116,7 @@
       "eastern",
       "chicken masala"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Indian_Spices.jpg/320px-Indian_Spices.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Zesty spice blend of black pepper, coriander, and cinnamon for succulent, flavorful chicken curries.",
     "basePrice": 50,
     "tier": "staple",
@@ -1137,7 +1137,7 @@
       "dabur hommade",
       "ginger garlic paste"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/100/0063/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Thick, coarse kitchen paste prepared from fresh ginger and garlic for hassle-free daily marination.",
     "basePrice": 50,
     "tier": "staple",
@@ -1159,7 +1159,7 @@
       "taaza homogenised toned milk",
       "doodh"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "UHT treated long life toned milk with 3.0% fat, no preservatives required before opening.",
     "basePrice": 74,
     "tier": "staple",
@@ -1181,7 +1181,7 @@
       "gold homogenised full cream milk",
       "doodh"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Rich and creamy standardized milk with 4.5% fat for tea, coffee, curd, and homemade sweets.",
     "basePrice": 82,
     "tier": "staple",
@@ -1203,7 +1203,7 @@
       "toned milk",
       "doodh"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Foodstuff_in_India.jpg/320px-Foodstuff_in_India.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Fresh pasteurized toned milk pouch chilled and delivered fresh daily.",
     "basePrice": 30,
     "tier": "staple",
@@ -1225,7 +1225,7 @@
       "full cream milk",
       "doodh"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Foodstuff_in_India.jpg/320px-Foodstuff_in_India.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Creamy fresh full cream milk pouch for rich tea, desserts, and set curd.",
     "basePrice": 36,
     "tier": "popular",
@@ -1246,7 +1246,7 @@
       "amul",
       "masti dahi pouch"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Thick pasteurized curd prepared with active cultures for authentic homemade taste and raita.",
     "basePrice": 35,
     "tier": "staple",
@@ -1267,7 +1267,7 @@
       "heritage",
       "fresh curd"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Foodstuff_in_India.jpg/320px-Foodstuff_in_India.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Natural, creamy cultured curd pouch ideal for daily curd rice and lassi.",
     "basePrice": 42,
     "tier": "popular",
@@ -1288,7 +1288,7 @@
       "amul",
       "fresh malai paneer"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Soft and spongy rich cottage cheese cubes with superior melt-in-mouth texture for paneer butter masala.",
     "basePrice": 92,
     "tier": "staple",
@@ -1311,7 +1311,7 @@
       "namak",
       "tata namak"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Classic golden salted butter made from pure milk fat, iconic on toast, parathas, and pav bhaji.",
     "basePrice": 60,
     "tier": "staple",
@@ -1332,7 +1332,7 @@
       "amul",
       "cheese slices"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Individually wrapped processed cheese slices, quick to melt on sandwiches and burgers.",
     "basePrice": 145,
     "tier": "popular",
@@ -1356,7 +1356,7 @@
       "ande",
       "eggs"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/Egg_Box.jpg/320px-Egg_Box.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Nutritious and protein-rich fresh poultry white table eggs hygienically inspected and packed.",
     "basePrice": 48,
     "tier": "staple",
@@ -1379,7 +1379,7 @@
       "cheeni",
       "shakkar"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Sugar_2xmacro.jpg/320px-Sugar_2xmacro.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Refined sulphurless sparkling white sugar crystals produced with untreated automated hygiene.",
     "basePrice": 55,
     "tier": "staple",
@@ -1402,7 +1402,7 @@
       "cheeni",
       "shakkar"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Sugar_2xmacro.jpg/320px-Sugar_2xmacro.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "100% pure premium cane sugar crystals free from harmful bleaching agents and chemicals.",
     "basePrice": 58,
     "tier": "popular",
@@ -1425,7 +1425,7 @@
       "namak",
       "tata namak"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/105/885/4102/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "India's trusted vacuum-evaporated table salt containing optimal iodine for thyroid health.",
     "basePrice": 28,
     "tier": "staple",
@@ -1448,7 +1448,7 @@
       "namak",
       "tata namak"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/105/885/4102/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Low-sodium iodized salt specially designed for dietary sodium management and blood pressure care.",
     "basePrice": 42,
     "tier": "popular",
@@ -1471,7 +1471,7 @@
       "namak",
       "tata namak"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Sugar_2xmacro.jpg/320px-Sugar_2xmacro.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Natural, unrefined sendha namak rock salt crystals mined from authentic Himalayan mineral beds.",
     "basePrice": 95,
     "tier": "popular",
@@ -1492,7 +1492,7 @@
       "organic tattva",
       "organic jaggery powder"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Sugar_2xmacro.jpg/320px-Sugar_2xmacro.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Certified chemical-free pulverized pure sugarcane jaggery powder for healthy tea and payasam.",
     "basePrice": 65,
     "tier": "popular",
@@ -1513,7 +1513,7 @@
       "24 mantra",
       "organic jaggery block"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Sugar_2xmacro.jpg/320px-Sugar_2xmacro.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Solid traditional gur block made without synthetic clarifying agents for festive sweets.",
     "basePrice": 98,
     "tier": "specialty",
@@ -1534,7 +1534,7 @@
       "dabur",
       "100% pure honey"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/100/0063/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Squeezy bottle of 100% pure NMR-tested honey sourced from natural bee apiaries.",
     "basePrice": 115,
     "tier": "staple",
@@ -1557,7 +1557,7 @@
       "-g original glucose biscuits",
       "biskut"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/143/501/5001/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Iconic sweet golden glucose tea biscuit filled with milk and wheat energy for the whole family.",
     "basePrice": 30,
     "tier": "staple",
@@ -1579,7 +1579,7 @@
       "marie gold biscuits",
       "biskut"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/155/500/4001/front_en.4.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Crispy, light, low-fat tea companion biscuit enriched with essential vitamins and minerals.",
     "basePrice": 38,
     "tier": "staple",
@@ -1600,7 +1600,7 @@
       "britannia",
       "good day butter cookies"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/155/500/4001/front_en.4.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Rich buttery smiling cookies infused with crunchy butter cashews and irresistible flavor.",
     "basePrice": 45,
     "tier": "staple",
@@ -1621,7 +1621,7 @@
       "sunfeast",
       "dark fantasy choco fills"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Cookies_and_biscuits.jpg/320px-Cookies_and_biscuits.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Decadent crisp chocolate cookie shell filled with smooth, molten molten choco cream inside.",
     "basePrice": 120,
     "tier": "popular",
@@ -1643,7 +1643,7 @@
       "vanilla creme biscuits",
       "biskut"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Crunchy rich cocoa sandwich cookies stuffed with sweet vanilla cream for twist, lick, and dunk.",
     "basePrice": 35,
     "tier": "staple",
@@ -1666,7 +1666,7 @@
       "namak",
       "tata namak"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0048/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Thinly sliced, crispy golden potato chips dusted with light sea salt for classic munching.",
     "basePrice": 20,
     "tier": "staple",
@@ -1687,7 +1687,7 @@
       "lay's",
       "india's magic masala chips"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/506/300/0048/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Spicy and tangy wavy potato chips coated in an authentic blend of rich Indian street spices.",
     "basePrice": 20,
     "tier": "staple",
@@ -1708,7 +1708,7 @@
       "kurkure",
       "masala munch"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Cookies_and_biscuits.jpg/320px-Cookies_and_biscuits.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Crunchy puffed corn and rice curls coated in fiery, savory Indian masala seasonings.",
     "basePrice": 20,
     "tier": "staple",
@@ -1729,7 +1729,7 @@
       "haldiram's",
       "nagpur aloo bhujia"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Crispy spiced potato and chickpea flour noodle snacks flavored with mint, chilli, and spices.",
     "basePrice": 55,
     "tier": "staple",
@@ -1750,7 +1750,7 @@
       "haldiram's",
       "all in one mixture"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Cookies_and_biscuits.jpg/320px-Cookies_and_biscuits.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Savory blend of crunchy sev, peanuts, corn flakes, lentils, and cashew nuts tossed with spices.",
     "basePrice": 58,
     "tier": "popular",
@@ -1773,7 +1773,7 @@
       "chai",
       "chaye"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Granular black CTC tea blend delivering unbeatable strength, bright amber liquor, and rich aroma.",
     "basePrice": 260,
     "tier": "staple",
@@ -1796,7 +1796,7 @@
       "chai",
       "chaye"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/107/300/9013/front_en.6.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Carefully proportioned blend of brisk CTC granules with gently rolled fragrant whole long leaves.",
     "basePrice": 295,
     "tier": "staple",
@@ -1819,7 +1819,7 @@
       "chai",
       "chaye"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Indian_tea.jpg/320px-Indian_tea.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Selected Assam tea leaves offering a rich, strong kadak cup preferred for morning milk chai.",
     "basePrice": 275,
     "tier": "popular",
@@ -1842,7 +1842,7 @@
       "chai",
       "chaye"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Indian_tea.jpg/320px-Indian_tea.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Invigorating zero-calorie green tea bags infused with natural honey and zesty lemon notes.",
     "basePrice": 165,
     "tier": "popular",
@@ -1864,7 +1864,7 @@
       "classic instant coffee",
       "kaapi"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/770/221/004/9023/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "100% pure instant coffee granules roasted for bold, full-bodied morning cups of hot or iced coffee.",
     "basePrice": 185,
     "tier": "staple",
@@ -1886,7 +1886,7 @@
       "instant coffee",
       "kaapi"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Indian_tea.jpg/320px-Indian_tea.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Fine blend of 70% selected coffee beans and 30% chicory, creating authentic South Indian filter style froth.",
     "basePrice": 210,
     "tier": "staple",
@@ -1907,7 +1907,7 @@
       "cadbury",
       "cadbury bournvita chocolate nutrition drink"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Malted chocolate health drink powder enriched with Vitamin D, Iron, and Zinc for growing children.",
     "basePrice": 240,
     "tier": "staple",
@@ -1928,7 +1928,7 @@
       "horlicks",
       "classic malt nutrition drink"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Indian_tea.jpg/320px-Indian_tea.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Clinically proven malted barley and wheat nutritional health powder for strength and stamina.",
     "basePrice": 250,
     "tier": "popular",
@@ -1949,7 +1949,7 @@
       "kinley",
       "packaged drinking water"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Indian_tea.jpg/320px-Indian_tea.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Purified table water treated with reverse osmosis and micro-filtration with added minerals.",
     "basePrice": 20,
     "tier": "staple",
@@ -1970,7 +1970,7 @@
       "thums up",
       "carbonated soft drink"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Indian_tea.jpg/320px-Indian_tea.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Strong, fizzy Indian spiced cola drink with an unmistakable bold kick of taste the thunder.",
     "basePrice": 40,
     "tier": "staple",
@@ -1991,7 +1991,7 @@
       "kellogg's",
       "corn flakes original"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/050/000/010/4027/front_en.7.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Crispy golden toasted flakes of sun-ripened corn enriched with 8 essential vitamins and iron.",
     "basePrice": 190,
     "tier": "popular",
@@ -2012,7 +2012,7 @@
       "quaker",
       "rolled oats"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/030/000/010/0073/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "100% whole grain rolled oats delivering beta-glucan fiber to support heart health and satiety.",
     "basePrice": 185,
     "tier": "staple",
@@ -2033,7 +2033,7 @@
       "kellogg's",
       "oats 100% wholegrain"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/050/000/010/4027/front_en.7.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Nutritious wholegrain oats ideal for sweet porridge, masala savory oats, or upma.",
     "basePrice": 175,
     "tier": "popular",
@@ -2054,7 +2054,7 @@
       "bambino",
       "roasted vermicelli"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Cornflake_box.jpg/320px-Cornflake_box.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Non-sticky pre-roasted semolina sevian for instant sweet kheer, sheer khurma, and savory upma.",
     "basePrice": 48,
     "tier": "staple",
@@ -2075,7 +2075,7 @@
       "mtr",
       "instant rava upma mix"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Instant breakfast mix made with semolina, cashews, ginger, and mustard seasoning, ready in 3 minutes.",
     "basePrice": 95,
     "tier": "popular",
@@ -2097,7 +2097,7 @@
       "2-minute masala noodles",
       "2 min noodles"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/178/400/1300/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "India's favorite instant noodles with signature tastemaker blend of 10 roasted aromatic spices.",
     "basePrice": 56,
     "tier": "staple",
@@ -2120,7 +2120,7 @@
       "maggi",
       "2 min noodles"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Cornflake_box.jpg/320px-Cornflake_box.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Long, non-sticky round instant noodles with a colorful veggie blend and savory spice seasoning.",
     "basePrice": 50,
     "tier": "staple",
@@ -2141,7 +2141,7 @@
       "kissan",
       "fresh tomato ketchup"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Cornflake_box.jpg/320px-Cornflake_box.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Rich, sweet and tangy red ketchup crafted from 100% real ripe sun-grown tomatoes.",
     "basePrice": 130,
     "tier": "staple",
@@ -2163,7 +2163,7 @@
       "rich tomato ketchup bottle",
       "2 min noodles"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Cornflake_box.jpg/320px-Cornflake_box.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Glass bottle of thick, tangy tomato sauce spiced just right for snacks, rolls, and fries.",
     "basePrice": 95,
     "tier": "popular",
@@ -2184,7 +2184,7 @@
       "kissan",
       "mixed fruit jam"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Cornflake_box.jpg/320px-Cornflake_box.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Delicious fruit spread combining the pulp of apples, papayas, bananas, and strawberries.",
     "basePrice": 160,
     "tier": "staple",
@@ -2206,7 +2206,7 @@
       "original bathing soap bar",
       "sabun"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/185/400/0014/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Trusted germ protection soap bar with proven pine fragrance to keep your skin hygienic and fresh.",
     "basePrice": 185,
     "tier": "staple",
@@ -2228,7 +2228,7 @@
       "total germ protection soap",
       "sabun"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/185/400/0014/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Daily hygiene soap featuring Activ Silver formula fighting 99.9% illness-causing germs.",
     "basePrice": 145,
     "tier": "staple",
@@ -2249,7 +2249,7 @@
       "dove",
       "cream beauty bathing bar"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/185/400/0014/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Gentle moisturizing cleansing bar infused with 1/4th hydrating cream for soft, supple skin.",
     "basePrice": 68,
     "tier": "popular",
@@ -2274,7 +2274,7 @@
       "pappu",
       "haldi"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Soap-Bar-and-Bubbles.jpg/320px-Soap-Bar-and-Bubbles.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Traditional herbal skin soap enriched with natural sandalwood and turmeric for glowing skin.",
     "basePrice": 140,
     "tier": "staple",
@@ -2295,7 +2295,7 @@
       "head & shoulders",
       "anti-dandruff shampoo"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Soap-Bar-and-Bubbles.jpg/320px-Soap-Bar-and-Bubbles.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Scalp conditioning anti-dandruff shampoo delivering up to 100% flake-free healthy hair.",
     "basePrice": 180,
     "tier": "staple",
@@ -2316,7 +2316,7 @@
       "clinic plus",
       "strong & long shampoo"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Soap-Bar-and-Bubbles.jpg/320px-Soap-Bar-and-Bubbles.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Nourishing daily milk protein shampoo formulated to strengthen hair from root to tip.",
     "basePrice": 110,
     "tier": "staple",
@@ -2337,7 +2337,7 @@
       "colgate",
       "strong teeth dental toothpaste"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/142/700/4011/front_en.5.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Amino Shakti calcium formula strengthening teeth from within and protecting against cavities.",
     "basePrice": 125,
     "tier": "staple",
@@ -2358,7 +2358,7 @@
       "closeup",
       "everfresh red hot toothpaste"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Soap-Bar-and-Bubbles.jpg/320px-Soap-Bar-and-Bubbles.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Gel toothpaste with active antibacterial zinc mouthwash and fiery spicy red clove blast.",
     "basePrice": 105,
     "tier": "staple",
@@ -2379,7 +2379,7 @@
       "oral-b",
       "shiny clean soft toothbrush"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Soap-Bar-and-Bubbles.jpg/320px-Soap-Bar-and-Bubbles.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "End-rounded bristles with tongue cleaner designed for gentle enamel polishing and plaque removal.",
     "basePrice": 65,
     "tier": "staple",
@@ -2400,7 +2400,7 @@
       "dettol",
       "liquid handwash refill pouch"
     ],
-    "image": "https://images.openfoodfacts.org/images/products/890/185/400/0014/front_en.3.400.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Economical refill liquid soap pouch with 10x better germ protection and moisturizing glycerin.",
     "basePrice": 99,
     "tier": "staple",
@@ -2423,7 +2423,7 @@
       "washing powder",
       "surf"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Advanced stain-lifting enzyme powder that dissolves quickly and removes tough mud and oil stains.",
     "basePrice": 145,
     "tier": "staple",
@@ -2446,7 +2446,7 @@
       "washing powder",
       "surf"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Specialized washing machine laundry powder delivering deep fiber cleaning and lasting fragrance.",
     "basePrice": 215,
     "tier": "popular",
@@ -2469,7 +2469,7 @@
       "washing powder",
       "surf"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Compact laundry washing bar formulated with bright clean technology for dazzling white collars.",
     "basePrice": 25,
     "tier": "staple",
@@ -2490,7 +2490,7 @@
       "vim",
       "dishwash bar with lemon"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Degreasing kitchen bar enriched with the power of 100 lemons to remove burnt oily residue.",
     "basePrice": 30,
     "tier": "staple",
@@ -2511,7 +2511,7 @@
       "vim",
       "dishwash gel bottle"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Concentrated yellow dishwashing gel that cleans sinks full of utensils without white residue.",
     "basePrice": 115,
     "tier": "staple",
@@ -2532,7 +2532,7 @@
       "pril",
       "dishwash liquid lime"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Active power molecule dish wash liquid removing stubborn food crusts with fresh lime aroma.",
     "basePrice": 110,
     "tier": "popular",
@@ -2555,7 +2555,7 @@
       "washing powder",
       "surf"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Hospital-grade floor disinfectant solution killing 99.9% germs with sparkling citrus shine.",
     "basePrice": 102,
     "tier": "staple",
@@ -2579,7 +2579,7 @@
       "cooking oil",
       "meetha tel"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Thick blue disinfectant formula removing tough yellow limescale and stains below the waterline.",
     "basePrice": 98,
     "tier": "staple",
@@ -2600,7 +2600,7 @@
       "scotch-brite",
       "heavy duty scrub pad"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Durable abrasive nylon scouring pads providing scratch-free scrubbing for stainless steel cookware.",
     "basePrice": 45,
     "tier": "staple",
@@ -2621,7 +2621,7 @@
       "all out",
       "ultra mosquito repellent refill"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Long-lasting vaporizing liquid refill providing whole night protection against dengue mosquitoes.",
     "basePrice": 85,
     "tier": "staple",
@@ -2642,7 +2642,7 @@
       "24 mantra",
       "organic jowar flour"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Wheat_flour_1.jpg/320px-Wheat_flour_1.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Gluten-free organic white sorghum flour for healthy rotis and diabetic-friendly cooking.",
     "basePrice": 58,
     "tier": "specialty",
@@ -2663,7 +2663,7 @@
       "24 mantra",
       "organic ragi flour"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Wheat_flour_1.jpg/320px-Wheat_flour_1.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Calcium-dense organic finger millet flour for traditional ragi mudde, malt, and dosas.",
     "basePrice": 52,
     "tier": "specialty",
@@ -2684,7 +2684,7 @@
       "tata sampann",
       "kabuli chana"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Dal-makhani.jpg/320px-Dal-makhani.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Large, bold white chickpeas with tender texture for authentic restaurant-style Amritsari chole.",
     "basePrice": 88,
     "tier": "popular",
@@ -2705,7 +2705,7 @@
       "tata sampann",
       "rajma kashmiri"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Dal-makhani.jpg/320px-Dal-makhani.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Lustrous red kidney beans sourced from Jammu & Kashmir that cook to a buttery soft richness.",
     "basePrice": 95,
     "tier": "popular",
@@ -2726,7 +2726,7 @@
       "everest",
       "kasuri methi"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Indian_Spices.jpg/320px-Indian_Spices.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Sun-dried fenugreek leaves from Nagaur with distinctive savory aroma for rich North Indian gravies.",
     "basePrice": 42,
     "tier": "popular",
@@ -2747,7 +2747,7 @@
       "dabur",
       "red ayurvedic toothpaste"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Soap-Bar-and-Bubbles.jpg/320px-Soap-Bar-and-Bubbles.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Time-tested ayurvedic toothpaste formulated with 13 herbs including clove, pudina, and tomar.",
     "basePrice": 110,
     "tier": "popular",
@@ -2768,7 +2768,7 @@
       "comfort",
       "after wash fabric conditioner lily"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Fabric care conditioner giving clothes unbeatable softness and 14 days of lasting floral freshness.",
     "basePrice": 220,
     "tier": "popular",
@@ -2789,7 +2789,7 @@
       "pintola",
       "all natural peanut butter crunchy"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Cornflake_box.jpg/320px-Cornflake_box.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "100% roasted peanuts spread with crunchy chunks, zero added sugar, cholesterol, or trans fats.",
     "basePrice": 155,
     "tier": "specialty",
@@ -2810,7 +2810,7 @@
       "paper boat",
       "mango aamras juice"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Indian_tea.jpg/320px-Indian_tea.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Thick and luscious mango drink made with 45% real mango pulp reminding you of childhood summers.",
     "basePrice": 99,
     "tier": "popular",
@@ -2831,7 +2831,7 @@
       "good knight",
       "gold flash liquid mosquito refill"
     ],
-    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Cleaning_supplies.jpg/320px-Cleaning_supplies.jpg",
+    "image": "/images/product-placeholder.svg",
     "description": "Advanced formula mosquito repellent refill with flash mode for instant release against mosquitoes.",
     "basePrice": 82,
     "tier": "popular",

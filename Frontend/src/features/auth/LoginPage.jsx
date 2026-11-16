@@ -50,12 +50,12 @@ export default function LoginPage() {
     <>
       <form onSubmit={submit} noValidate className="space-y-4">
         <div>
-          <h2 className="text-xl font-bold text-ink">Customer Login</h2>
-          <p className="mt-1 text-xs text-mute">Enter your details to continue.</p>
+          <h2 className="text-xl font-bold text-white">Customer Login</h2>
+          <p className="mt-1 text-xs text-[#94849A]">Enter your details to continue.</p>
         </div>
 
         {serverError && (
-          <p role="alert" className="rounded-xl bg-danger-50 p-3 text-xs font-semibold text-danger">
+          <p role="alert" className="rounded-xl bg-danger/15 border border-danger/30 p-3 text-xs font-semibold text-danger">
             {serverError}
           </p>
         )}
@@ -87,7 +87,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setShowForgotModal(true)}
-              className="text-xs font-semibold text-accent-500 hover:text-accent-600 transition"
+              className="text-xs font-semibold text-[#EC55C8] hover:text-[#F58AD8] transition"
             >
               Forgot password?
             </button>
@@ -98,31 +98,34 @@ export default function LoginPage() {
           type="submit"
           full
           loading={submitting}
-          className="mt-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/25 uppercase tracking-wide font-bold"
+          className="mt-2 text-sm shadow-md shadow-pink-500/25"
         >
-          Login
+          Login →
         </Button>
 
-        <p className="pt-2 text-center text-xs text-mute">
+        <p className="pt-2 text-center text-xs text-[#94849A]">
           New to NearBuy?{' '}
-          <Link to={ROUTES.register} className="font-bold text-accent-500 hover:underline">
+          <Link to={ROUTES.register} className="font-bold text-[#EC55C8] hover:underline">
             Create account
           </Link>
         </p>
       </form>
 
-      <Modal open={showForgotModal} onClose={() => setShowForgotModal(false)} title="Reset Password">
-        <div className="space-y-3 py-2 text-sm text-mute">
-          <p>
-            Password reset is currently handled by your store administrator or via customer support.
-          </p>
-          <p className="text-xs bg-brand-50 p-3 rounded-xl text-brand-900">
-            For local testing and evaluation, please use your registered credentials or create a new account.
-          </p>
-          <Button full variant="soft" onClick={() => setShowForgotModal(false)}>
+      <Modal
+        open={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        title="Reset Password"
+        footer={
+          <Button full onClick={() => setShowForgotModal(false)}>
             Close
           </Button>
-        </div>
+        }
+      >
+        <p className="text-xs text-[#C4B4C9] leading-relaxed">
+          NearBuy uses your verified email or mobile number for account access. In this demo
+          environment, default seed accounts share standard credentials. For assistance, reach out
+          to support.
+        </p>
       </Modal>
     </>
   )

@@ -59,19 +59,18 @@ export default function NotificationsPage() {
       refreshUnread()
     } catch (e) {
       setItems(prev)
-      showToast(getErrorMessage(e), 'error')
     }
   }
 
   const getNotificationIcon = (title, msg) => {
     const text = (title + ' ' + msg).toLowerCase()
     if (text.includes('paid') || text.includes('payment')) {
-      return <CreditCard className="h-4 w-4 text-emerald-600" />
+      return <CreditCard className="h-4 w-4 text-[#20C878]" />
     }
     if (text.includes('ready') || text.includes('picked') || text.includes('order')) {
-      return <ShoppingBag className="h-4 w-4 text-accent-500" />
+      return <ShoppingBag className="h-4 w-4 text-[#EC55C8]" />
     }
-    return <Info className="h-4 w-4 text-purple-600" />
+    return <Info className="h-4 w-4 text-[#B65DDA]" />
   }
 
   const filteredItems = items.filter((n) => {
@@ -83,14 +82,14 @@ export default function NotificationsPage() {
   })
 
   return (
-    <div className="pb-12">
+    <div className="min-h-screen bg-[#100A14] text-white pb-12">
       <PageHeader
         title="Notifications"
         right={
           unreadCount > 0 && (
             <button
               onClick={readAll}
-              className="mr-1 rounded-full px-3 py-1.5 text-xs font-bold text-accent-500 active:bg-pink-50 transition"
+              className="mr-1 rounded-full px-3 py-1.5 text-xs font-bold text-[#EC55C8] hover:underline transition"
             >
               Mark all read
             </button>
@@ -98,22 +97,22 @@ export default function NotificationsPage() {
         }
       />
 
-      <div className="px-4 pt-3 space-y-3">
-        {/* Filter Tabs matching Storyboard Screen 11 */}
+      <div className="px-4 pt-3 space-y-4">
+        {/* Tabs */}
         <div className="flex gap-2">
           {[
             ['all', 'All'],
             ['orders', 'Orders'],
             ['system', 'System'],
-          ].map(([key, label]) => (
+          ].map(([k, label]) => (
             <button
-              key={key}
+              key={k}
               type="button"
-              onClick={() => setActiveTab(key)}
-              className={`rounded-full px-4 py-1.5 text-xs font-bold transition ${
-                activeTab === key
-                  ? 'bg-accent-500 text-white shadow-xs'
-                  : 'bg-white text-mute border border-line hover:bg-canvas'
+              onClick={() => setActiveTab(k)}
+              className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all duration-150 ${
+                activeTab === k
+                  ? 'bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] text-white shadow-md shadow-pink-500/20'
+                  : 'bg-[#211522] border border-[#593650] text-[#94849A] hover:text-white'
               }`}
             >
               {label}
@@ -121,11 +120,12 @@ export default function NotificationsPage() {
           ))}
         </div>
 
-        <div className="space-y-2.5 pt-1">
+        {/* List */}
+        <div className="space-y-2.5">
           {loading ? (
             <>
-              <Skeleton className="h-20 rounded-2xl" />
-              <Skeleton className="h-20 rounded-2xl" />
+              <Skeleton className="h-20 w-full rounded-2xl" />
+              <Skeleton className="h-20 w-full rounded-2xl" />
             </>
           ) : error ? (
             <ErrorState error={error} onRetry={reload} title="Could not load notifications" />
@@ -133,33 +133,33 @@ export default function NotificationsPage() {
             filteredItems.map((n) => (
               <div
                 key={n.id}
-                className={`flex items-start gap-3 rounded-2xl p-3.5 shadow-card border transition ${
-                  n.isRead ? 'bg-white border-line' : 'bg-pink-50/40 border-pink-100'
+                onClick={() => open(n)}
+                className={`relative flex items-start gap-3 rounded-2xl border p-3.5 transition cursor-pointer ${
+                  n.isRead
+                    ? 'border-[#593650]/60 bg-[#170F1B] opacity-80'
+                    : 'border-[#EC55C8]/50 bg-[#211522] shadow-sm shadow-pink-500/10'
                 }`}
               >
-                <div className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-canvas border border-line">
+                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#2B1B2D] border border-[#593650]">
                   {getNotificationIcon(n.title, n.message)}
                 </div>
-
-                <button
-                  onClick={() => open(n)}
-                  className="flex min-w-0 flex-1 flex-col text-left"
-                  aria-label={`${n.title}${n.isRead ? '' : ', unread'}`}
-                >
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="font-bold text-xs text-ink truncate">{n.title}</span>
-                    {!n.isRead && (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-accent-500" />
-                    )}
+                    <h3 className="truncate text-xs font-bold text-white">{n.title}</h3>
+                    <span className="text-[10px] text-[#94849A] shrink-0">
+                      {formatDateTime(n.createdAt)}
+                    </span>
                   </div>
-                  <span className="mt-0.5 text-xs leading-relaxed text-mute">{n.message}</span>
-                  <span className="mt-1 text-[10px] text-mute/80">{formatDateTime(n.createdAt)}</span>
-                </button>
-
+                  <p className="mt-1 text-xs text-[#C4B4C9] leading-relaxed">{n.message}</p>
+                </div>
                 <button
-                  onClick={() => remove(n)}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    remove(n)
+                  }}
+                  className="grid h-7 w-7 shrink-0 place-items-center rounded-lg text-[#94849A] hover:text-danger hover:bg-danger/10 transition"
                   aria-label="Delete notification"
-                  className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-mute hover:text-danger active:bg-danger-50 transition"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
@@ -168,8 +168,8 @@ export default function NotificationsPage() {
           ) : (
             <EmptyState
               icon={Bell}
-              title="You are all caught up"
-              text="Order updates and system notifications will appear here."
+              title="No notifications yet"
+              text="Updates about your orders and delivery statuses will appear here."
             />
           )}
         </div>

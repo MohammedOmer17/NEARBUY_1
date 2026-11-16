@@ -130,15 +130,19 @@ const unitNormalizationMap = {
   box: "piece",
 };
 
+function normalizeProductUnit(value, packSize = "") {
+  const rawUnit = String(value || "").trim().toLowerCase();
+  const unit = unitNormalizationMap[rawUnit] || rawUnit;
+  const normalizedPackSize = String(packSize || "").trim() ||
+    (unit !== rawUnit ? String(value).trim() : "");
+  return { unit, packSize: normalizedPackSize };
+}
+
 shopProductSchema.pre("validate", function () {
   if (this.unit) {
-    const rawUnit = String(this.unit).trim().toLowerCase();
-    if (unitNormalizationMap[rawUnit]) {
-      if (!this.packSize && rawUnit !== unitNormalizationMap[rawUnit]) {
-        this.packSize = this.unit.trim();
-      }
-      this.unit = unitNormalizationMap[rawUnit];
-    }
+    const measurement = normalizeProductUnit(this.unit, this.packSize);
+    this.unit = measurement.unit;
+    this.packSize = measurement.packSize;
   }
 });
 
@@ -148,5 +152,7 @@ shopProductSchema.index({ canonicalProduct: 1, isAvailable: 1, price: 1 });
 shopProductSchema.index({ isAvailable: 1, createdAt: -1 });
 shopProductSchema.index({ name: 1, unit: 1 });
 
-module.exports = mongoose.model("ShopProduct", shopProductSchema);
+const ShopProduct = mongoose.model("ShopProduct", shopProductSchema);
+ShopProduct.normalizeProductUnit = normalizeProductUnit;
 
+module.exports = ShopProduct;

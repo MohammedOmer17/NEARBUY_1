@@ -38,6 +38,7 @@ const getProductSuggestions = async (req, res) => {
   try {
     // 1. Primary search with regex on name, brand, aliases, category
     const filter = {
+      isActive: { $ne: false },
       $or: [
         { normalizedName: new RegExp(`^${escapedQuery}`, "i") },
         { normalizedName: new RegExp(`\\b${escapedQuery}`, "i") },
@@ -53,7 +54,7 @@ const getProductSuggestions = async (req, res) => {
     }
 
     let candidates = await CanonicalProduct.find(filter)
-      .select("name brand category unit packSize image basePrice tier aliases")
+      .select("productId name normalizedName brand category unit packSize image basePrice tier aliases isActive")
       .limit(maxLimit * 2)
       .lean();
 
@@ -69,7 +70,7 @@ const getProductSuggestions = async (req, res) => {
         ],
       }));
 
-      const tokenQuery = { $and: tokenConditions };
+      const tokenQuery = { isActive: { $ne: false }, $and: tokenConditions };
       if (category && category !== "All" && category.trim()) {
         tokenQuery.category = new RegExp(category.trim(), "i");
       }
@@ -91,8 +92,8 @@ const getProductSuggestions = async (req, res) => {
     if (candidates.length < maxLimit && normalizedQuery.length >= 3) {
       const allCategoryProducts = await CanonicalProduct.find(
         category && category !== "All" && category.trim()
-          ? { category: new RegExp(category.trim(), "i") }
-          : {}
+          ? { isActive: { $ne: false }, category: new RegExp(category.trim(), "i") }
+          : { isActive: { $ne: false } }
       ).limit(200);
 
       const existingIds = new Set(candidates.map((c) => c._id.toString()));
@@ -156,6 +157,7 @@ const getProductSuggestions = async (req, res) => {
       _id: prod._id,
       id: prod._id,
       canonicalProductId: prod._id,
+    productId: prod.productId,
       name: prod.name,
       normalizedName: prod.normalizedName,
       category: prod.category,
@@ -163,7 +165,7 @@ const getProductSuggestions = async (req, res) => {
       unit: prod.unit,
       packSize: prod.packSize || "",
       description: prod.description || "",
-      image: prod.image || "",
+      image: prod.image || "/images/product-placeholder.svg",
       tier: prod.tier,
       basePrice: prod.basePrice || 0,
       aliases: prod.aliases || [],
@@ -179,7 +181,7 @@ const getProductSuggestions = async (req, res) => {
 const getCanonicalProductById = async (req, res) => {
   const { id } = req.params;
   try {
-    const product = await CanonicalProduct.findById(id);
+    const product = await CanonicalProduct.findOne({ _id: id, isActive: { $ne: false } });
     if (!product) {
       return res.status(404).json({ message: "Canonical product not found" });
     }

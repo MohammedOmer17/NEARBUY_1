@@ -28,18 +28,21 @@ export default class ErrorBoundary extends Component {
           : this.props.fallback
       }
 
+      const errorMessage =
+        this.state.error?.message ||
+        this.props.message ||
+        'An unexpected error occurred while displaying this section. Please try reloading.'
+
       return (
-        <div className="flex min-h-[50vh] flex-col items-center justify-center p-6 text-center">
-          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-600 shadow-sm">
+        <div className="flex min-h-[50vh] flex-col items-center justify-center p-6 text-center text-white">
+          <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-[#F05A79]/15 border border-[#F05A79]/30 text-[#F05A79] shadow-sm">
             <AlertTriangle className="h-7 w-7" />
           </div>
-          <h2 className="text-lg font-bold text-ink">
+          <h2 className="text-lg font-bold text-white">
             {this.props.title || 'Something went wrong'}
           </h2>
-          <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-mute">
-            {this.props.message ||
-              this.state.error?.message ||
-              'An unexpected error occurred while displaying this section. Please try reloading.'}
+          <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-[#94849A]">
+            {errorMessage}
           </p>
 
           <div className="mt-5 flex items-center justify-center gap-3">
@@ -47,7 +50,7 @@ export default class ErrorBoundary extends Component {
               variant="primary"
               size="sm"
               onClick={this.handleReset}
-              className="gap-1.5 bg-gradient-to-r from-brand-600 to-pink-600 font-semibold"
+              className="gap-1.5 font-semibold"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Try Again
@@ -58,9 +61,9 @@ export default class ErrorBoundary extends Component {
               onClick={() => {
                 if (typeof window !== 'undefined') window.location.href = '/'
               }}
-              className="gap-1.5 font-semibold"
+              className="gap-1.5 font-semibold text-xs"
             >
-              <Home className="h-3.5 w-3.5 text-mute" />
+              <Home className="h-3.5 w-3.5 text-[#94849A]" />
               Home
             </Button>
           </div>

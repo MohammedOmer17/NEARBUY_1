@@ -16,30 +16,30 @@ const ProductCard = memo(function ProductCard({ product, showCompare = false }) 
     Number(product.price) > 0
 
   return (
-    <article className="group flex min-w-0 flex-col justify-between rounded-2xl border border-line/70 bg-white p-3 shadow-card transition hover:shadow-md">
+    <article className="group flex min-w-0 flex-col justify-between rounded-2xl border border-[#593650] bg-[#211522] p-3 shadow-card transition-all duration-200 hover:border-[#EC55C8]/70 hover:shadow-lg hover:shadow-pink-500/10">
       <Link to={ROUTES.product(product.id)} className="block min-w-0">
-        <div className="aspect-square w-full overflow-hidden rounded-xl bg-canvas flex items-center justify-center p-2 group-hover:scale-[1.02] transition">
-          <ProductImage src={product.image} alt={product.name} className="h-full w-full object-contain" />
+        <div className="aspect-square w-full overflow-hidden rounded-xl bg-[#170F1B] flex items-center justify-center p-2.5 transition-transform duration-200 group-hover:scale-[1.03]">
+          <ProductImage src={product.image} alt={product.name} category={product.category} className="h-full w-full object-contain" />
         </div>
-        <div className="mt-2.5 min-w-0">
-          <h3 className="line-clamp-2 min-h-9 text-xs sm:text-sm font-bold text-ink leading-snug">
+        <div className="mt-3 min-w-0">
+          <h3 className="line-clamp-2 min-h-9 text-xs sm:text-sm font-bold text-white leading-snug">
             {product.name}
           </h3>
           {pack && (
-            <p className="mt-0.5 text-[11px] font-semibold text-mute truncate">{pack}</p>
+            <p className="mt-1 text-[11px] font-medium text-[#94849A] truncate">{pack}</p>
           )}
           {product.brand && (
-            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-accent-500 truncate">
+            <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[#EC55C8] truncate">
               {product.brand}
             </p>
           )}
           {!showCompare && (
-            <div className="mt-1.5 flex items-baseline gap-1">
-              <span className="text-sm sm:text-base font-black text-ink">
+            <div className="mt-2 flex items-baseline gap-1">
+              <span className="text-sm sm:text-base font-black text-white">
                 {hasValidPrice ? (
                   formatCurrency(product.price)
                 ) : (
-                  <span className="text-[11px] font-medium text-mute">Price unavailable</span>
+                  <span className="text-[11px] font-medium text-[#94849A]">Price unavailable</span>
                 )}
               </span>
             </div>
@@ -47,22 +47,22 @@ const ProductCard = memo(function ProductCard({ product, showCompare = false }) 
         </div>
       </Link>
 
-      <div className="mt-3 flex items-center justify-between gap-1.5 pt-1 border-t border-line/50">
+      <div className="mt-3.5 flex items-center justify-between gap-1.5 pt-2 border-t border-[#593650]/60">
         <div className="min-w-0">
           {showCompare ? (
             product.offerCount > 1 ? (
-              <span className="inline-block text-[11px] font-bold text-accent-600">
+              <span className="inline-block text-[11px] font-bold text-[#F58AD8]">
                 {product.offerCount} shops available
               </span>
             ) : (
-              <span className="inline-block text-[11px] font-medium text-mute">
+              <span className="inline-block text-[11px] font-medium text-[#94849A]">
                 Available in 1 shop
               </span>
             )
           ) : (
             <span
               className={`inline-block text-[11px] font-semibold ${
-                product.available !== false ? 'text-emerald-600' : 'text-rose-500'
+                product.available !== false ? 'text-[#20C878]' : 'text-[#F05A79]'
               }`}
             >
               {product.available !== false ? 'In Stock' : 'Out of Stock'}
@@ -73,7 +73,7 @@ const ProductCard = memo(function ProductCard({ product, showCompare = false }) 
         {showCompare ? (
           <Link
             to={ROUTES.product(product.id)}
-            className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-pink-50 text-accent-500 border border-pink-200 transition hover:bg-accent-500 hover:text-white active:scale-95 shadow-sm"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[#2B1B2D] text-[#EC55C8] border border-[#593650] transition hover:bg-gradient-to-r hover:from-[#EC55C8] hover:to-[#B65DDA] hover:text-white active:scale-95 shadow-sm"
             aria-label={`View details and compare offers for ${product.name}`}
           >
             <Plus className="h-4 w-4" />
@@ -87,5 +87,3 @@ const ProductCard = memo(function ProductCard({ product, showCompare = false }) 
 })
 
 export default ProductCard
-
-

@@ -1,5 +1,4 @@
 import { Outlet, useLocation } from 'react-router-dom'
-import PhoneFrame from './PhoneFrame'
 import CartBar from '../components/shared/CartBar'
 import { useCart } from '../context/CartContext'
 
@@ -16,10 +15,11 @@ export default function StackLayout() {
   const showCartBar = isBrowsePage && itemCount > 0
 
   return (
-    <PhoneFrame className={showCartBar ? 'pb-24' : ''}>
-      <Outlet />
-      {showCartBar && <CartBar bottom={0} />}
-    </PhoneFrame>
+    <div className="min-h-screen bg-[#100A14] text-white flex flex-col items-center">
+      <div className={`relative w-full max-w-md lg:max-w-4xl min-h-screen bg-[#100A14] ${showCartBar ? 'pb-24' : ''}`}>
+        <Outlet />
+        {showCartBar && <CartBar bottom={0} />}
+      </div>
+    </div>
   )
 }
-

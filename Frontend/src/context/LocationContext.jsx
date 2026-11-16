@@ -260,10 +260,10 @@ export function LocationProvider({ children }) {
           {error && (
             <div
               role="alert"
-              className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 space-y-1"
+              className="rounded-xl border border-rose-800/80 bg-rose-950/60 p-3 text-xs text-rose-200 space-y-1"
             >
               <p className="font-semibold">{error}</p>
-              <p className="text-[11px] text-red-600">
+              <p className="text-[11px] text-rose-300">
                 You can select any neighborhood from the list below to continue.
               </p>
             </div>
@@ -274,7 +274,7 @@ export function LocationProvider({ children }) {
             full
             loading={busy}
             onClick={detectAndSave}
-            className="flex items-center justify-center gap-2 bg-brand-600 text-white font-semibold text-xs py-2.5 shadow-sm active:bg-brand-700"
+            className="flex items-center justify-center gap-2 bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] text-white font-bold text-xs py-2.5 shadow-sm active:scale-[0.99]"
           >
             <Navigation className="h-4 w-4" />
             {busy ? 'Detecting accurate GPS location...' : 'Use my current GPS location'}
@@ -282,19 +282,19 @@ export function LocationProvider({ children }) {
 
           {/* Search Localities */}
           <div className="relative">
-            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-mute" />
+            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-[#94849A]" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search locality or pincode (e.g. Erragadda, Murad Nagar)..."
-              className="w-full bg-canvas/70 border border-line rounded-xl pl-9 pr-8 py-2 text-xs text-ink placeholder:text-mute/70 outline-none focus:border-brand-500 focus:bg-white transition"
+              className="w-full bg-[#170F1B] border border-[#593650] rounded-xl pl-9 pr-8 py-2 text-xs text-white placeholder:text-[#94849A] outline-none focus:border-[#EC55C8] focus:bg-[#211522] transition"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2.5 text-mute hover:text-ink"
+                className="absolute right-2.5 top-2.5 text-[#94849A] hover:text-white"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -305,16 +305,16 @@ export function LocationProvider({ children }) {
           <div className="pt-1">
             <div className="relative flex items-center justify-center mb-2.5">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-line" />
+                <div className="w-full border-t border-[#593650]" />
               </div>
-              <span className="relative bg-white px-2 text-[10px] font-bold uppercase tracking-wider text-mute">
+              <span className="relative bg-[#211522] px-2 text-[10px] font-bold uppercase tracking-wider text-[#94849A]">
                 Select Hyderabad Locality
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-2 max-h-56 overflow-y-auto pr-1">
               {filteredLocalities.length === 0 ? (
-                <div className="py-6 text-center text-xs text-mute">
+                <div className="py-6 text-center text-xs text-[#94849A]">
                   No localities matching &quot;{searchQuery}&quot;. Try searching another area.
                 </div>
               ) : (
@@ -332,27 +332,27 @@ export function LocationProvider({ children }) {
                       onClick={() => selectManualLocation(loc)}
                       className={`flex items-center justify-between rounded-xl border p-2.5 text-left transition active:scale-[0.99] ${
                         isSelected
-                          ? 'border-brand-500 bg-brand-50/70 text-brand-900 font-semibold shadow-xs'
-                          : 'border-line bg-canvas/40 hover:bg-canvas text-ink'
+                          ? 'border-[#EC55C8] bg-pink-950/60 text-[#F58AD8] font-semibold shadow-xs'
+                          : 'border-[#593650] bg-[#170F1B] hover:bg-[#2B1B2D] text-white'
                       }`}
                     >
                       <div className="min-w-0 pr-2">
                         <div className="flex items-center gap-1.5">
                           <p className="truncate text-xs font-bold">{loc.label}</p>
                           {loc.pincode && (
-                            <span className="text-[10px] bg-canvas border border-line text-mute px-1.5 py-0.2 rounded font-mono">
+                            <span className="text-[10px] bg-[#100A14] border border-[#593650] text-[#C4B4C9] px-1.5 py-0.2 rounded font-mono">
                               {loc.pincode}
                             </span>
                           )}
                         </div>
-                        <p className="truncate text-[10px] text-mute">{loc.tag || loc.address}</p>
+                        <p className="truncate text-[10px] text-[#94849A]">{loc.tag || loc.address}</p>
                       </div>
                       {isSelected ? (
-                        <div className="grid h-5 w-5 place-items-center rounded-full bg-brand-600 text-white shrink-0">
+                        <div className="grid h-5 w-5 place-items-center rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] text-white shrink-0">
                           <Check className="h-3 w-3" />
                         </div>
                       ) : (
-                        <span className="text-[10px] font-medium text-mute/80 shrink-0">Select</span>
+                        <span className="text-[10px] font-medium text-[#94849A] shrink-0">Select</span>
                       )}
                     </button>
                   )

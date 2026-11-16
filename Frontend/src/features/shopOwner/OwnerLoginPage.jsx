@@ -7,7 +7,6 @@ import Input from '../../components/ui/Input'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
 import { getErrorMessage } from '../../services/apiClient'
-import PhoneFrame from '../../layouts/PhoneFrame'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -35,7 +34,6 @@ export default function OwnerLoginPage() {
     setServerError('')
     try {
       const data = await login(form.email.trim(), form.password)
-      // Save shop ID to known shops for discovery
       if (data?.shop?._id) {
         try {
           const cached = JSON.parse(localStorage.getItem('nearbuy_known_shops') || '[]')
@@ -56,107 +54,122 @@ export default function OwnerLoginPage() {
   }
 
   return (
-    <PhoneFrame className="flex min-h-dvh flex-col bg-gradient-to-b from-[#2A0F5C] via-[#3B0764] to-[#4A0E4E]">
-      <div className="px-6 pb-8 pt-[calc(3rem+env(safe-area-inset-top))] text-center text-white">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-400 shadow-lg shadow-pink-500/30">
-          <Store className="h-7 w-7 text-white" />
-        </div>
-        <h1 className="mt-4 text-3xl font-extrabold tracking-tight">NearBuy</h1>
-        <p className="mt-1 text-sm font-semibold text-pink-300">Local shopping, made easy.</p>
-        <p className="mt-2 text-xs text-purple-200/80">Manage your shop and grow your business.</p>
-      </div>
-
-      <main className="flex-1 rounded-t-[32px] bg-white px-6 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-7 shadow-2xl">
-        <div className="mb-5">
-          <h2 className="text-xl font-bold text-ink">Shop Owner Login</h2>
-          <p className="mt-1 text-xs text-mute">Enter your details to continue.</p>
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-[#100A14] bg-radial from-[#2B1B2D]/60 via-[#170F1B] to-[#100A14] p-4 text-white">
+      <div className="w-full max-w-md flex flex-col">
+        {/* Brand Header */}
+        <div className="px-6 pb-6 pt-6 text-center text-white">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-[#EC55C8] to-[#B65DDA] shadow-lg shadow-pink-500/30">
+            <Store className="h-7 w-7 text-white" />
+          </div>
+          <h1 className="mt-4 text-3xl font-black tracking-tight text-white">NearBuy</h1>
+          <p className="mt-1 text-sm font-bold text-[#F58AD8]">Local shopping, made easy.</p>
+          <p className="mt-1 text-xs text-[#94849A]">Manage your shop and grow your business.</p>
         </div>
 
-        {serverError && (
-          <p role="alert" className="mb-4 rounded-xl bg-danger-50 p-3 text-xs font-semibold text-danger">
-            {serverError}
-          </p>
-        )}
+        {/* Card Body */}
+        <main className="rounded-[28px] border border-[#593650] bg-[#211522] px-6 py-7 shadow-2xl">
+          <div className="mb-5">
+            <h2 className="text-xl font-bold text-white">Shop Owner Login</h2>
+            <p className="mt-1 text-xs text-[#94849A]">Enter your details to continue.</p>
+          </div>
 
-        <form onSubmit={onSubmit} noValidate className="space-y-4">
-          <Input
-            label="Email address"
-            icon={Mail}
-            type="email"
-            autoComplete="email"
-            placeholder="owner@example.com"
-            value={form.email}
-            onChange={handleChange('email')}
-            error={errors.email}
-          />
+          {serverError && (
+            <p role="alert" className="mb-4 rounded-xl bg-danger/15 border border-danger/30 p-3 text-xs font-semibold text-danger">
+              {serverError}
+            </p>
+          )}
 
-          <div>
+          <form onSubmit={onSubmit} noValidate className="space-y-4">
             <Input
-              label="Password"
-              icon={Lock}
-              type="password"
-              autoComplete="current-password"
-              placeholder="Your password"
-              value={form.password}
-              onChange={handleChange('password')}
-              error={errors.password}
+              label="Email address"
+              icon={Mail}
+              type="email"
+              autoComplete="email"
+              placeholder="owner@example.com"
+              value={form.email}
+              onChange={handleChange('email')}
+              error={errors.email}
             />
-            <div className="mt-1.5 text-right">
-              <button
-                type="button"
-                onClick={() => setShowForgotModal(true)}
-                className="text-xs font-semibold text-accent-500 hover:text-accent-600 transition"
+
+            <div>
+              <Input
+                label="Password"
+                icon={Lock}
+                type="password"
+                autoComplete="current-password"
+                placeholder="Your password"
+                value={form.password}
+                onChange={handleChange('password')}
+                error={errors.password}
+              />
+              <div className="mt-1.5 text-right">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  className="text-xs font-semibold text-[#EC55C8] hover:text-[#F58AD8] transition"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              full
+              loading={submitting}
+              className="mt-2 text-sm shadow-md shadow-pink-500/25"
+            >
+              Login →
+            </Button>
+
+            <p className="pt-2 text-center text-xs text-[#94849A]">
+              New to NearBuy?{' '}
+              <Link to={ROUTES.ownerRegister} className="font-bold text-[#EC55C8] hover:underline">
+                Create account
+              </Link>
+            </p>
+          </form>
+
+          {/* Switch Portal Section */}
+          <div className="mt-7 border-t border-[#593650] pt-5">
+            <p className="text-center text-[10px] font-bold uppercase tracking-[0.16em] text-[#94849A]">
+              Or continue as
+            </p>
+            <div className="mt-3.5 grid grid-cols-2 gap-3">
+              <Link
+                to={ROUTES.login}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-[#593650] bg-[#170F1B] p-3 text-xs font-bold text-white transition hover:border-[#EC55C8] hover:bg-[#2B1B2D]"
               >
-                Forgot password?
-              </button>
+                <User className="h-4 w-4 text-[#EC55C8]" />
+                <span>Customer</span>
+              </Link>
+              <Link
+                to={ROUTES.captainLogin}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-[#593650] bg-[#170F1B] p-3 text-xs font-bold text-white transition hover:border-[#EC55C8] hover:bg-[#2B1B2D]"
+              >
+                <Bike className="h-4 w-4 text-[#B65DDA]" />
+                <span>Delivery Partner</span>
+              </Link>
             </div>
           </div>
+        </main>
+      </div>
 
-          <Button
-            type="submit"
-            full
-            loading={submitting}
-            className="mt-2 bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md shadow-pink-500/25 uppercase tracking-wide font-bold"
-          >
-            LOGIN
-          </Button>
-        </form>
-
-        <p className="mt-4 text-center text-xs text-mute">
-          New to NearBuy?{' '}
-          <Link to={ROUTES.ownerRegister} className="font-bold text-accent-500 hover:underline">
-            Create account
-          </Link>
-        </p>
-
-        <div className="mt-8 border-t border-line pt-5">
-          <div className="flex flex-col gap-2.5">
-            <Link
-              to={ROUTES.login}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-canvas p-3 text-xs font-bold text-ink transition hover:border-pink-300 hover:bg-pink-50/40"
-            >
-              <User className="h-4 w-4 text-pink-600" />
-              <span>Continue as Customer</span>
-            </Link>
-            <Link
-              to={ROUTES.captainLogin}
-              className="flex items-center justify-center gap-2 rounded-2xl border border-line bg-canvas p-3 text-xs font-bold text-ink transition hover:border-purple-300 hover:bg-purple-50/40"
-            >
-              <Bike className="h-4 w-4 text-purple-600" />
-              <span>Continue as Delivery Partner</span>
-            </Link>
-          </div>
-        </div>
-      </main>
-
-      <Modal open={showForgotModal} onClose={() => setShowForgotModal(false)} title="Reset Password">
-        <div className="space-y-3 py-2 text-sm text-mute">
-          <p>Shop Owner credentials can be updated or reset through the system administrator.</p>
-          <Button full variant="soft" onClick={() => setShowForgotModal(false)}>
+      <Modal
+        open={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        title="Reset Password"
+        footer={
+          <Button full onClick={() => setShowForgotModal(false)}>
             Close
           </Button>
-        </div>
+        }
+      >
+        <p className="text-xs text-[#C4B4C9] leading-relaxed">
+          Default seed accounts share standard credentials. If you forgot your store credentials,
+          please contact support or re-register.
+        </p>
       </Modal>
-    </PhoneFrame>
+    </div>
   )
 }

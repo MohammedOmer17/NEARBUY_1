@@ -441,6 +441,22 @@ async function runTests() {
   assert.ok(foundInHistory, 'Completed order must appear in Captain history');
   console.log(`✓ Order verified in Captain Delivery History (${completedList.length} total completed missions)`);
 
+  // Cleanup test-created order and test accounts so they do not persist in the database
+  try {
+    const Order = require('../models/Order');
+    const Customer = require('../models/CustomerModel');
+    const Captain = require('../models/CaptainModel');
+    if (orderId) {
+      await Order.deleteOne({ _id: orderId });
+    }
+    if (custEmail) {
+      await Customer.deleteOne({ email: custEmail });
+    }
+    await Captain.deleteMany({ email: { $in: [cap1Email, cap2Email, cap3Email] } });
+  } catch (cleanErr) {
+    // Ignore cleanup error
+  }
+
   console.log('\n=============================================================');
   console.log('ALL CAPTAIN DISPATCH & LIFECYCLE TESTS PASSED FLAWLESSLY! ✓');
   console.log('=============================================================');

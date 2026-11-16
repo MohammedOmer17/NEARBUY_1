@@ -15,7 +15,7 @@ export default function AddControl({ product, large = false }) {
 
   if (product.available === false || !hasValidPrice) {
     return (
-      <span className="rounded-full bg-canvas px-2.5 py-1 text-[11px] font-semibold text-mute">
+      <span className="rounded-full bg-[#170F1B] border border-[#593650]/60 px-2.5 py-1 text-[11px] font-semibold text-[#94849A]">
         Unavailable
       </span>
     )
@@ -46,7 +46,7 @@ export default function AddControl({ product, large = false }) {
           disabled={busy}
           onClick={() => remove(product.id)}
           aria-label={`Remove ${product.name}`}
-          className="grid h-7 w-7 place-items-center rounded-lg text-pink-500 hover:text-red-600 hover:bg-pink-50 active:scale-90 transition disabled:opacity-50"
+          className="grid h-7 w-7 place-items-center rounded-lg text-[#94849A] hover:text-[#F05A79] hover:bg-[#F05A79]/15 active:scale-90 transition disabled:opacity-50"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </button>
@@ -60,9 +60,9 @@ export default function AddControl({ product, large = false }) {
         type="button"
         disabled={busy}
         onClick={() => add(product, 1)}
-        className="h-12 px-8 rounded-full border border-accent-500 font-bold text-accent-500 text-base transition active:bg-accent-50 disabled:opacity-50"
+        className="h-12 px-8 rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] font-bold text-white text-base shadow-lg shadow-pink-500/25 transition active:scale-95 hover:brightness-110 disabled:opacity-50"
       >
-        Add
+        Add to Cart
       </button>
     )
   }
@@ -73,7 +73,7 @@ export default function AddControl({ product, large = false }) {
       disabled={busy}
       onClick={() => add(product, 1)}
       aria-label={`Add ${product.name} to cart`}
-      className="grid h-8 w-8 place-items-center rounded-lg bg-pink-50 text-accent-500 border border-pink-200 transition hover:bg-accent-500 hover:text-white active:scale-95 shadow-sm disabled:opacity-50"
+      className="grid h-8 w-8 place-items-center rounded-lg bg-[#2B1B2D] text-[#EC55C8] border border-[#593650] transition hover:bg-gradient-to-r hover:from-[#EC55C8] hover:to-[#B65DDA] hover:text-white active:scale-95 shadow-sm disabled:opacity-50"
     >
       <Plus className="h-4 w-4" />
     </button>

@@ -41,7 +41,7 @@ export function CartProvider({ children }) {
   const mark = (id, on) => setBusy((b) => ({ ...b, [id]: on }))
 
   const doAdd = useCallback(async (product, quantity) => {
-    const productId = product?.id || product?._id
+    const productId = product?.id || product?._id || product?.productId
     if (!productId) return false
     mark(productId, true)
     try {
@@ -62,7 +62,11 @@ export function CartProvider({ children }) {
 
   // One cart = one shop. Never clear silently: ask first.
   const add = useCallback((product, quantity = 1) => {
-    const productShopId = product.shopId || product.shop?.id || product.shop?._id
+    const productShopId =
+      product.shopId ||
+      product.shop?.id ||
+      product.shop?._id ||
+      (typeof product.shop === 'string' ? product.shop : null)
     const differentShop =
       cart.items.length > 0 &&
       cart.shopId &&

@@ -20,12 +20,30 @@ import Button from '../../../components/ui/Button'
 
 const matches = (q, ...fields) => fields.some((f) => f?.toLowerCase().includes(q))
 
+// Helper to read/write sessionStorage safely
+const readStorage = (key) => {
+  try {
+    const raw = sessionStorage.getItem(key)
+    return raw ? JSON.parse(raw) : null
+  } catch {
+    return null
+  }
+}
+
+const writeStorage = (key, val) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(val))
+  } catch {
+    // ignore
+  }
+}
+
 // In-memory cache to make tab switching (Home <-> Orders <-> Profile) instantaneous
 let homeDataCache = {
   key: null,
   timestamp: 0,
-  shopsList: [],
-  allProducts: [],
+  shopsList: readStorage('nb_cached_shops') || [],
+  allProducts: readStorage('nb_cached_products') || [],
 }
 
 export default function HomePage() {
@@ -36,17 +54,18 @@ export default function HomePage() {
   const [category, setCategory] = useState('')
   
   const cacheKey = `${location?.latitude || ''}:${location?.longitude || ''}`
-  const isCacheValid = homeDataCache.key === cacheKey && (Date.now() - homeDataCache.timestamp < 60000)
+  const hasWarmData = homeDataCache.shopsList.length > 0
+  const isCacheFresh = homeDataCache.key === cacheKey && (Date.now() - homeDataCache.timestamp < 120000)
 
-  const [loading, setLoading] = useState(!isCacheValid)
-  const [shopsList, setShopsList] = useState(isCacheValid ? homeDataCache.shopsList : [])
-  const [allProducts, setAllProducts] = useState(isCacheValid ? homeDataCache.allProducts : [])
+  const [loading, setLoading] = useState(!hasWarmData)
+  const [shopsList, setShopsList] = useState(homeDataCache.shopsList)
+  const [allProducts, setAllProducts] = useState(homeDataCache.allProducts)
 
   // Load nearby shops based on customer location (or all active shops if location unset)
   useEffect(() => {
     let alive = true
     async function loadData() {
-      if (!isCacheValid) {
+      if (!hasWarmData) {
         setLoading(true)
       }
       try {
@@ -95,88 +114,119 @@ export default function HomePage() {
         }
 
         // Cache known shop IDs for seamless cross-page navigation
-        try {
-          const ids = fetchedShops.map((s) => s.id).filter(Boolean)
-          if (ids.length) {
-            localStorage.setItem('nearbuy_known_shops', JSON.stringify(ids))
-          }
-        } catch {
-          // ignore storage error
+        const ids = fetchedShops.map((s) => s.id).filter(Boolean)
+        if (ids.length) {
+          writeStorage('nb_cached_shop_ids', ids)
+          writeStorage('nb_cached_shops', fetchedShops)
         }
 
-        // 3. Fetch product catalogues for discovered shops in parallel
-        const cataloguePromises = fetchedShops.slice(0, 8).map(async (shop) => {
-          try {
-            const products = await productApi.byShop(shop.id)
-            return (products || []).map((p) => ({
-              ...p,
-              shopId: shop.id,
-              shopName: shop.name,
-            }))
-          } catch {
-            return []
-          }
-        })
+        if (alive && fetchedShops.length) {
+          setShopsList(fetchedShops)
+        }
 
-        const catalogueResults = await Promise.all(cataloguePromises)
-        const productsCollected = catalogueResults.flat()
+        // 3. Fetch products across top nearby shops in parallel for multi-shop comparison
+        let prods = []
+        try {
+          const productPromises = fetchedShops.slice(0, 5).map(async (shop) => {
+            try {
+              return await productApi.byShop(shop.id)
+            } catch (shopErr) {
+              console.warn(`Failed to fetch products for shop ${shop.id}:`, shopErr)
+              return []
+            }
+          })
+          const results = await Promise.all(productPromises)
+          prods = results.flat()
+        } catch (err) {
+          console.error('Failed to load products for home comparison:', err)
+        }
 
         if (alive) {
           setShopsList(fetchedShops)
-          setAllProducts(productsCollected)
+          if (prods.length) {
+            setAllProducts(prods)
+            writeStorage('nb_cached_products', prods)
+          }
+          // Update memory cache
           homeDataCache = {
             key: cacheKey,
             timestamp: Date.now(),
             shopsList: fetchedShops,
-            allProducts: productsCollected,
+            allProducts: prods.length ? prods : allProducts,
           }
         }
+      } catch (err) {
+        console.error('Home load error:', err)
       } finally {
         if (alive) setLoading(false)
       }
     }
 
-    loadData()
+    // If cache is fresh, skip re-fetching
+    if (!isCacheFresh) {
+      loadData()
+    }
     return () => {
       alive = false
     }
-  }, [location?.latitude, location?.longitude, cacheKey, isCacheValid])
+  }, [location?.latitude, location?.longitude, isCacheFresh, cacheKey])
 
-  const dedupedProducts = useMemo(() => groupProductsByIdentity(allProducts), [allProducts])
-  const categories = useMemo(
-    () => Array.from(new Set(dedupedProducts.map((p) => p.category).filter(Boolean))),
-    [dedupedProducts],
-  )
+  // Group cross-shop products by canonical/normalized identity
+  const canonicalProducts = useMemo(() => {
+    return groupProductsByIdentity(allProducts)
+  }, [allProducts])
 
-  const q = query.trim().toLowerCase()
-  const visibleShops = q ? shopsList.filter((s) => matches(q, s.name, s.address)) : shopsList
-  const visibleProducts = dedupedProducts.filter(
-    (p) =>
-      (!category || category === 'All' || p.category === category) &&
-      (!q || matches(q, p.name, p.brand, p.category, p.unit, p.packSize, p.variant)),
-  )
+  // Extract distinct category tabs
+  const categories = useMemo(() => {
+    const s = new Set()
+    for (const p of canonicalProducts) {
+      if (p.category) s.add(p.category)
+    }
+    return ['All', ...Array.from(s)]
+  }, [canonicalProducts])
 
-  const noResults = !loading && q && !visibleShops.length && !visibleProducts.length
+  // Filter canonical products based on active category & query
+  const visibleProducts = useMemo(() => {
+    let list = canonicalProducts
+    if (category) {
+      list = list.filter((p) => p.category?.toLowerCase() === category.toLowerCase())
+    }
+    const q = query.trim().toLowerCase()
+    if (q) {
+      list = list.filter((p) => matches(q, p.name, p.category, p.brand))
+    }
+    return list
+  }, [canonicalProducts, category, query])
+
+  // Filter nearby shops if search query is provided
+  const visibleShops = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (!q) return shopsList
+    return shopsList.filter((s) => matches(q, s.name, s.address))
+  }, [shopsList, query])
+
+  const noResults = Boolean(query) && !visibleProducts.length && !visibleShops.length
 
   return (
-    <div className="pb-12">
-      {/* Header matching Storyboard Screen 3 */}
-      <header className="rounded-b-[32px] bg-gradient-to-b from-[#2A0F5C] via-[#3B0764] to-[#4A0E4E] px-4 pb-6 pt-[calc(1.2rem+env(safe-area-inset-top))] text-white shadow-lg">
-        <div className="flex items-center justify-between">
+    <div className="min-h-full bg-[#100A14] text-white">
+      {/* Top Header */}
+      <header className="sticky top-0 z-30 border-b border-[#593650] bg-[#100A14]/95 px-4 pb-3 pt-[calc(0.75rem+env(safe-area-inset-top))] backdrop-blur">
+        <div className="flex items-center justify-between gap-3">
           <button
+            type="button"
             onClick={openSheet}
-            className="min-w-0 text-left transition active:opacity-80"
-            aria-label="Change location"
+            aria-label="Change delivery location"
+            className="flex-1 text-left transition active:opacity-75"
           >
-            <span className="flex items-center gap-1 text-[11px] font-semibold tracking-wide text-pink-300">
-              <MapPin className="h-3.5 w-3.5 text-pink-400" /> Deliver to
+            <span className="flex items-center gap-1 text-[11px] font-bold tracking-wide text-[#EC55C8]">
+              <MapPin className="h-3.5 w-3.5 text-[#EC55C8]" /> Deliver to
             </span>
-            <span className="flex items-center gap-1 text-base font-extrabold tracking-tight truncate max-w-[240px]">
+            <span className="flex items-center gap-1 text-sm sm:text-base font-extrabold tracking-tight truncate max-w-[240px] text-white">
               {location ? (location.label || 'Hyderabad') : 'Set your location'}
-              <ChevronDown className="h-4 w-4 shrink-0 text-pink-300" />
+              <ChevronDown className="h-4 w-4 shrink-0 text-[#C4B4C9]" />
             </span>
             {location?.updatedAt && (
-              <span className="block text-[10px] text-white/60">
+              <span className="block text-[10px] text-[#94849A]">
                 Updated {formatDateTime(location.updatedAt)}
               </span>
             )}
@@ -187,24 +237,23 @@ export default function HomePage() {
               type="button"
               onClick={openCart}
               aria-label={`Cart, ${itemCount} items`}
-              className="relative grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition active:bg-white/20"
+              className="relative grid h-10 w-10 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white hover:border-[#EC55C8] transition active:scale-95"
             >
               <ShoppingBag className="h-5 w-5" />
               {itemCount > 0 && (
-                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent-500 px-1 text-[11px] font-bold text-white shadow">
+                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] px-1 text-[11px] font-bold text-white shadow">
                   {itemCount}
                 </span>
               )}
             </button>
             <Link
-
               to={ROUTES.notifications}
               aria-label={`Notifications, ${unread} unread`}
-              className="relative grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white transition active:bg-white/20"
+              className="relative grid h-10 w-10 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white hover:border-[#EC55C8] transition active:scale-95"
             >
               <Bell className="h-5 w-5" />
               {unread > 0 && (
-                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent-500 px-1 text-[11px] font-bold text-white shadow">
+                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] px-1 text-[11px] font-bold text-white shadow">
                   {unread > 9 ? '9+' : unread}
                 </span>
               )}
@@ -213,31 +262,31 @@ export default function HomePage() {
         </div>
 
         <SearchBar
-          className="mt-4 text-ink"
+          className="mt-3.5"
           value={query}
           onChange={setQuery}
           placeholder="Search for products or shops..."
         />
       </header>
 
-      <div className="space-y-6 px-4 pb-6 pt-4">
-        {/* Promotional Banner matching Storyboard Screen 3 */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-900 via-pink-700 to-rose-600 p-4 text-white shadow-md">
+      <div className="space-y-6 px-4 pb-8 pt-4">
+        {/* Promotional Banner */}
+        <div className="relative overflow-hidden rounded-2xl border border-[#593650] bg-gradient-to-r from-[#2B1B2D] via-[#481c4c] to-[#2B1B2D] p-4 text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/20 px-2.5 py-0.5 text-[11px] font-bold tracking-wide backdrop-blur-sm">
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#EC55C8]/20 border border-[#EC55C8]/40 px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-[#F58AD8] backdrop-blur-sm">
                 <Zap className="h-3.5 w-3.5 text-yellow-300 fill-yellow-300" />
                 Zapping Delivery in 14 mins
               </span>
-              <h2 className="text-lg font-black tracking-tight pt-1">Get ₹100 OFF</h2>
-              <p className="text-xs text-white/80">on your first order with NearBuy</p>
-              <div className="pt-1">
-                <span className="inline-flex items-center gap-1 rounded-md bg-white/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white border border-white/20">
-                  <Tag className="h-3 w-3" /> USE CODE: ZAP100
+              <h2 className="text-lg font-black tracking-tight pt-1 text-white">Get ₹100 OFF</h2>
+              <p className="text-xs text-[#C4B4C9]">on your first order with NearBuy</p>
+              <div className="pt-1.5">
+                <span className="inline-flex items-center gap-1 rounded-md bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white border border-white/15">
+                  <Tag className="h-3 w-3 text-[#EC55C8]" /> USE CODE: ZAP100
                 </span>
               </div>
             </div>
-            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-white/10 backdrop-blur-sm shadow-inner text-3xl font-extrabold">
+            <div className="grid h-16 w-16 place-items-center rounded-2xl bg-[#EC55C8]/15 border border-[#EC55C8]/30 shadow-inner text-3xl font-extrabold text-white">
               🛍️
             </div>
           </div>
@@ -245,11 +294,11 @@ export default function HomePage() {
 
         {/* Location setup prompt if not yet set */}
         {!location && (
-          <div className="flex items-center gap-3 rounded-2xl bg-white p-4 shadow-card">
-            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-pink-50 text-accent-500">
+          <div className="flex items-center gap-3 rounded-2xl border border-[#593650] bg-[#211522] p-4 shadow-card">
+            <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#2B1B2D] text-[#EC55C8] border border-[#593650]">
               <MapPin className="h-5 w-5" />
             </div>
-            <p className="flex-1 text-xs font-semibold text-ink">
+            <p className="flex-1 text-xs font-semibold text-white">
               Set your location to see kirana shops near you.
             </p>
             <Button size="sm" onClick={openSheet} className="text-xs">
@@ -274,9 +323,9 @@ export default function HomePage() {
             {/* Nearby Shops Section */}
             <section>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-base font-bold text-ink">Nearby Shops</h2>
+                <h2 className="text-base font-bold text-white">Nearby Shops</h2>
                 {visibleShops.length > 0 && (
-                  <span className="text-xs font-bold text-accent-500 cursor-pointer">See All</span>
+                  <span className="text-xs font-bold text-[#EC55C8] cursor-pointer hover:underline">See All &gt;</span>
                 )}
               </div>
 
@@ -292,15 +341,15 @@ export default function HomePage() {
                   ))}
                 </div>
               ) : (
-                <div className="rounded-2xl border border-dashed border-line bg-white p-5 text-center">
-                  <Store className="mx-auto h-8 w-8 text-mute/50" />
-                  <p className="mt-2 text-xs font-semibold text-ink">No registered shops found yet</p>
-                  <p className="mt-1 text-[11px] text-mute">
+                <div className="rounded-2xl border border-dashed border-[#593650] bg-[#211522] p-5 text-center">
+                  <Store className="mx-auto h-8 w-8 text-[#94849A]" />
+                  <p className="mt-2 text-xs font-semibold text-white">No registered shops found yet</p>
+                  <p className="mt-1 text-[11px] text-[#94849A]">
                     Register a shop with the Shop Owner app to begin listing products in this area.
                   </p>
                   <Link
                     to={ROUTES.ownerRegister}
-                    className="mt-3 inline-block rounded-full bg-accent-50 px-4 py-1.5 text-xs font-bold text-accent-500"
+                    className="mt-3 inline-block rounded-full bg-[#2B1B2D] border border-[#593650] px-4 py-1.5 text-xs font-bold text-[#F58AD8] hover:bg-[#38233b]"
                   >
                     Open Shop Owner App
                   </Link>
@@ -311,9 +360,9 @@ export default function HomePage() {
             {/* Popular Products Near You Section */}
             <section>
               <div className="mb-3 flex items-center justify-between">
-                <h2 className="text-base font-bold text-ink">Popular Products Near You</h2>
+                <h2 className="text-base font-bold text-white">Popular Products Near You</h2>
                 {visibleProducts.length > 0 && (
-                  <span className="text-xs font-bold text-accent-500 cursor-pointer">See All</span>
+                  <span className="text-xs font-bold text-[#EC55C8] cursor-pointer hover:underline">See All &gt;</span>
                 )}
               </div>
 
@@ -321,11 +370,11 @@ export default function HomePage() {
                 <CategoryChips categories={categories} value={category} onChange={setCategory} />
               )}
 
-              <div className="mt-3">
+              <div className="mt-3.5">
                 {loading ? (
-                  <ProductGridSkeleton />
+                  <ProductGridSkeleton count={6} />
                 ) : visibleProducts.length ? (
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
                     {visibleProducts.map((p) => (
                       <ProductCard key={p.key || p.id} product={p} showCompare={true} />
                     ))}

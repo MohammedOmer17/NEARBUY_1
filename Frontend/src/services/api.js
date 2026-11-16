@@ -63,6 +63,7 @@ export const shopApi = {
 }
 
 export const productApi = {
+  list: (shopId, query = {}) => productApi.byShop(shopId, query),
   byShop: (shopId, query = {}) =>
     apiClient
       .get(`/shop-products/shop/${shopId}`, { params: query })

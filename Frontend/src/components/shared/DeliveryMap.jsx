@@ -184,14 +184,28 @@ export default function DeliveryMap({
 
     // Handle container resize automatically
     const resizeObserver = new ResizeObserver(() => {
-      map.invalidateSize()
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.invalidateSize()
+        } catch {
+          // ignore invalidated size on destroyed map
+        }
+      }
     })
-    resizeObserver.observe(mapContainerRef.current)
+    if (mapContainerRef.current) {
+      resizeObserver.observe(mapContainerRef.current)
+    }
 
     return () => {
       resizeObserver.disconnect()
-      map.remove()
-      mapInstanceRef.current = null
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.remove()
+        } catch {
+          // ignore cleanup errors
+        }
+        mapInstanceRef.current = null
+      }
       markersLayerRef.current = null
       routeLayerRef.current = null
       setMapReady(false)
@@ -385,18 +399,18 @@ export default function DeliveryMap({
   const formattedDur = !isOutOfRange ? formatDuration(duration) : ''
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl border border-slate-700/60 bg-slate-900 shadow-xl ${className}`}>
+    <div className={`relative overflow-hidden rounded-3xl border border-[#593650] bg-[#211522] shadow-card ${className}`}>
       {/* Header bar / Title */}
-      <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 text-white backdrop-blur z-20 relative">
+      <div className="flex items-center justify-between border-b border-[#593650] bg-[#170F1B]/95 px-4 py-3 text-white backdrop-blur z-20 relative">
         <div className="flex items-center gap-2">
-          <div className="grid h-7 w-7 place-items-center rounded-xl bg-pink-500/20 text-pink-400">
+          <div className="grid h-7 w-7 place-items-center rounded-xl bg-[#EC55C8]/20 text-[#EC55C8]">
             <Navigation className="h-4 w-4" />
           </div>
           <div>
             <span className="text-xs font-black tracking-tight text-white block">
               {title || (activeLeg === 'captain_to_shop' ? 'Route to Merchant Store' : 'Route to Customer Drop')}
             </span>
-            <span className="text-[10px] text-slate-400 block font-medium">
+            <span className="text-[10px] text-[#94849A] block font-medium">
               {activeLeg === 'captain_to_shop'
                 ? `Pickup: ${shop?.name || 'Merchant Shop'}`
                 : `Destination: ${customer?.name || 'Customer'}`}
@@ -406,8 +420,8 @@ export default function DeliveryMap({
 
         {/* Live Route Distance & Duration Pill */}
         {(formattedDist || formattedDur) && (
-          <div className="flex items-center gap-1.5 rounded-full bg-slate-800/90 px-2.5 py-1 text-[11px] font-bold text-white border border-slate-700 shadow-sm">
-            <Clock className="h-3 w-3 text-pink-400" />
+          <div className="flex items-center gap-1.5 rounded-full bg-[#100A14] px-2.5 py-1 text-[11px] font-bold text-white border border-[#593650] shadow-sm">
+            <Clock className="h-3 w-3 text-[#EC55C8]" />
             <span>
               {formattedDur ? `${formattedDur}` : ''}
               {formattedDur && formattedDist ? ' • ' : ''}
@@ -418,7 +432,7 @@ export default function DeliveryMap({
       </div>
 
       {/* Map Canvas */}
-      <div className={`relative w-full ${height} z-10 bg-slate-950`}>
+      <div className={`relative w-full ${height} z-10 bg-[#100A14]`}>
         <div ref={mapContainerRef} className="h-full w-full" />
 
         {/* Floating Map Zoom & Recenter Controls */}
@@ -426,7 +440,7 @@ export default function DeliveryMap({
           <button
             type="button"
             onClick={handleZoomIn}
-            className="grid h-8 w-8 place-items-center rounded-xl bg-white/95 text-slate-800 hover:bg-white active:scale-95 shadow transition"
+            className="grid h-8 w-8 place-items-center rounded-xl bg-[#211522]/95 border border-[#593650] text-white hover:bg-[#2B1B2D] active:scale-95 shadow transition"
             aria-label="Zoom in"
           >
             <Plus className="h-4 w-4" />
@@ -434,7 +448,7 @@ export default function DeliveryMap({
           <button
             type="button"
             onClick={handleZoomOut}
-            className="grid h-8 w-8 place-items-center rounded-xl bg-white/95 text-slate-800 hover:bg-white active:scale-95 shadow transition"
+            className="grid h-8 w-8 place-items-center rounded-xl bg-[#211522]/95 border border-[#593650] text-white hover:bg-[#2B1B2D] active:scale-95 shadow transition"
             aria-label="Zoom out"
           >
             <Minus className="h-4 w-4" />
@@ -442,7 +456,7 @@ export default function DeliveryMap({
           <button
             type="button"
             onClick={handleRecenter}
-            className="grid h-8 w-8 place-items-center rounded-xl bg-white/95 text-brand-600 hover:bg-white active:scale-95 shadow transition"
+            className="grid h-8 w-8 place-items-center rounded-xl bg-[#211522]/95 border border-[#593650] text-[#EC55C8] hover:bg-[#2B1B2D] active:scale-95 shadow transition"
             aria-label="Fit route"
             title="Recenter Map"
           >
@@ -453,40 +467,40 @@ export default function DeliveryMap({
         {/* Live GPS Broadcast Indicator Overlay */}
         <div className="absolute top-3 left-3 z-[400] max-w-[210px] sm:max-w-xs">
           {gpsActive ? (
-            <div className="flex items-center gap-1.5 rounded-full bg-slate-900/90 px-2.5 py-1 text-[10px] font-bold text-emerald-400 border border-slate-700 backdrop-blur shadow-sm">
+            <div className="flex items-center gap-1.5 rounded-full bg-[#100A14]/90 px-2.5 py-1 text-[10px] font-bold text-[#20C878] border border-[#593650] backdrop-blur shadow-sm">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#20C878] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#20C878]"></span>
               </span>
               <span>Live GPS Broadcast</span>
             </div>
           ) : gpsError ? (
-            <div className="flex items-center gap-1.5 rounded-xl bg-amber-950/90 px-2.5 py-1 text-[10px] font-medium text-amber-300 border border-amber-800/80 backdrop-blur shadow-sm">
-              <AlertCircle className="h-3 w-3 shrink-0 text-amber-400" />
+            <div className="flex items-center gap-1.5 rounded-xl bg-rose-950/90 px-2.5 py-1 text-[10px] font-medium text-rose-300 border border-rose-800/80 backdrop-blur shadow-sm">
+              <AlertCircle className="h-3 w-3 shrink-0 text-rose-400" />
               <span className="truncate">{gpsError}</span>
             </div>
           ) : null}
         </div>
 
         {/* Legend Overlay at Bottom Left */}
-        <div className="absolute bottom-3 left-3 z-[400] hidden sm:flex items-center gap-2 rounded-xl bg-slate-900/85 px-2.5 py-1 text-[10px] font-semibold text-slate-300 border border-slate-800 backdrop-blur pointer-events-none">
+        <div className="absolute bottom-3 left-3 z-[400] hidden sm:flex items-center gap-2 rounded-xl bg-[#170F1B]/90 px-2.5 py-1 text-[10px] font-semibold text-[#C4B4C9] border border-[#593650] backdrop-blur pointer-events-none">
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-pink-500 inline-block" /> Captain
+            <span className="h-2 w-2 rounded-full bg-[#EC55C8] inline-block" /> Captain
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-purple-600 inline-block" /> Shop
+            <span className="h-2 w-2 rounded-full bg-[#B65DDA] inline-block" /> Shop
           </span>
           <span className="flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 inline-block" /> Customer
+            <span className="h-2 w-2 rounded-full bg-[#20C878] inline-block" /> Customer
           </span>
         </div>
       </div>
 
       {/* Action Footer: Prominent "Navigate in Google Maps" Button */}
       {showGoogleNavButton && navUrl && (
-        <div className="border-t border-slate-800 bg-slate-900 px-4 py-2.5 flex items-center justify-between text-xs z-20 relative">
-          <div className="text-[11px] text-slate-300 flex items-center gap-1.5">
-            <MapPin className="h-3.5 w-3.5 text-pink-400" />
+        <div className="border-t border-[#593650] bg-[#170F1B] px-4 py-2.5 flex items-center justify-between text-xs z-20 relative">
+          <div className="text-[11px] text-[#C4B4C9] flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 text-[#EC55C8]" />
             <span>
               {activeLeg === 'captain_to_shop'
                 ? `Destination: ${shop?.name || 'Merchant Shop'}`
@@ -498,7 +512,7 @@ export default function DeliveryMap({
             href={navUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-pink-600 to-brand-600 px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:from-pink-500 hover:to-brand-500 active:scale-95 transition"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] px-3.5 py-1.5 text-xs font-bold text-white shadow-md hover:brightness-110 active:scale-95 transition"
           >
             <span>Navigate in Google Maps</span>
             <ExternalLink className="h-3.5 w-3.5" />

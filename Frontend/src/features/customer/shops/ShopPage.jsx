@@ -18,12 +18,23 @@ export default function ShopPage() {
   const { shopId } = useParams()
   const { state } = useRouterLocation()
   const { location } = useLocation()
-  const { itemCount, openCart } = useCart()
+  const { itemCount, openCart, addItem, quantityOf } = useCart()
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('')
   const [isFavorite, setIsFavorite] = useState(false)
   const [fetchedShop, setFetchedShop] = useState(null)
   const { data: products, loading, error, reload } = useAsync(() => productApi.byShop(shopId), [shopId])
+
+  // If navigated here with a selected item, ensure it's in the cart
+  useEffect(() => {
+    const itemToAdd = state?.addedItem || state?.addItem
+    if (itemToAdd && (itemToAdd.id || itemToAdd._id || itemToAdd.productId)) {
+      const pid = itemToAdd.id || itemToAdd._id || itemToAdd.productId
+      if (quantityOf(pid) === 0) {
+        addItem(itemToAdd, 1).catch(() => {})
+      }
+    }
+  }, [state?.addedItem, state?.addItem]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!state?.shop && shopId) {
@@ -46,9 +57,29 @@ export default function ShopPage() {
     }
   }, [shopId])
 
+  // Deduplicate products strictly so multiple cards of the same item never appear
+  const uniqueProducts = useMemo(() => {
+    const map = new Map()
+    for (const p of products || []) {
+      const key =
+        p.canonicalProductId ||
+        `${(p.name || '').trim().toLowerCase()}|${(p.brand || '').trim().toLowerCase()}|${(
+          p.packSize ||
+          p.unit ||
+          ''
+        )
+          .trim()
+          .toLowerCase()}`
+      if (!map.has(key)) {
+        map.set(key, p)
+      }
+    }
+    return Array.from(map.values())
+  }, [products])
+
   const shop = useMemo(() => {
     const fromNav = state?.shop || fetchedShop
-    const shopLoc = fromNav?.location || products?.[0]?.shopLocation
+    const shopLoc = fromNav?.location || uniqueProducts?.[0]?.shopLocation
     let computedDistance = fromNav?.distanceKm ?? null
 
     if (
@@ -65,19 +96,19 @@ export default function ShopPage() {
     }
 
     return {
-      name: fromNav?.name || products?.[0]?.shopName || 'Local Kirana Store',
-      address: fromNav?.address || products?.[0]?.shopAddress || 'Murad Nagar, Hyderabad',
+      name: fromNav?.name || uniqueProducts?.[0]?.shopName || 'Local Kirana Store',
+      address: fromNav?.address || uniqueProducts?.[0]?.shopAddress || 'Murad Nagar, Hyderabad',
       distanceKm: computedDistance,
     }
-  }, [state?.shop, fetchedShop, products, location])
+  }, [state?.shop, fetchedShop, uniqueProducts, location])
 
   const categories = useMemo(
-    () => Array.from(new Set((products || []).map((p) => p.category).filter(Boolean))),
-    [products],
+    () => Array.from(new Set((uniqueProducts || []).map((p) => p.category).filter(Boolean))),
+    [uniqueProducts],
   )
 
   const q = query.trim().toLowerCase()
-  const visible = (products || []).filter(
+  const visible = (uniqueProducts || []).filter(
     (p) =>
       (!category || category === 'All' || p.category === category) &&
       (!q ||
@@ -87,7 +118,7 @@ export default function ShopPage() {
   )
 
   return (
-    <div className="pb-24">
+    <div className="min-h-screen bg-[#100A14] text-white pb-24">
       <PageHeader
         title={shop.name}
         right={
@@ -96,11 +127,11 @@ export default function ShopPage() {
               type="button"
               onClick={openCart}
               aria-label={`Cart, ${itemCount} items`}
-              className="relative grid h-10 w-10 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+              className="relative grid h-10 w-10 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white hover:border-[#EC55C8] transition active:scale-95"
             >
               <ShoppingBag className="h-5 w-5" />
               {itemCount > 0 && (
-                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-accent-500 px-1 text-[11px] font-bold text-white shadow">
+                <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] px-1 text-[11px] font-bold text-white shadow">
                   {itemCount}
                 </span>
               )}
@@ -108,35 +139,34 @@ export default function ShopPage() {
             <button
               type="button"
               onClick={() => setIsFavorite((f) => !f)}
-              className="grid h-10 w-10 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+              className="grid h-10 w-10 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white hover:border-[#EC55C8] transition active:scale-95"
               aria-label="Save shop to favorites"
             >
               <Heart
-                className={`h-5 w-5 ${isFavorite ? 'fill-accent-500 text-accent-500' : 'text-mute'}`}
+                className={`h-5 w-5 transition ${isFavorite ? 'fill-[#EC55C8] text-[#EC55C8]' : 'text-[#94849A]'}`}
               />
             </button>
           </div>
         }
       />
 
-
-      <div className="px-4 pb-6 pt-3">
-        {/* Shop Card matching Storyboard Screen 4 */}
-        <div className="flex items-center gap-3.5 rounded-2xl bg-white p-4 shadow-card">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-tr from-pink-100 to-purple-100 text-accent-500 font-bold text-xl">
+      <div className="px-4 pb-6 pt-3 space-y-4">
+        {/* Shop Card */}
+        <div className="flex items-center gap-3.5 rounded-2xl border border-[#593650] bg-[#211522] p-4 shadow-card">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-[#2B1B2D] text-[#EC55C8] border border-[#593650] font-bold text-xl">
             <Store className="h-7 w-7" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-base font-extrabold text-ink">{shop.name}</h2>
+            <h2 className="truncate text-base font-extrabold text-white">{shop.name}</h2>
             <div className="mt-1 flex items-center gap-2 text-xs">
-              <span className="flex items-center gap-1 font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                <Star className="h-3 w-3 fill-amber-500 text-amber-500" /> 4.5 (210+)
+              <span className="flex items-center gap-1 font-bold text-[#F5A623] bg-[#F5A623]/15 border border-[#F5A623]/30 px-2 py-0.5 rounded-full">
+                <Star className="h-3 w-3 fill-[#F5A623] text-[#F5A623]" /> 4.5 (210+)
               </span>
-              <span className="text-mute font-medium">
+              <span className="text-[#94849A] font-medium">
                 {formatDistance(shop.distanceKm, 'Distance unavailable')}
               </span>
             </div>
-            {shop.address && <p className="mt-1 truncate text-xs text-mute">{shop.address}</p>}
+            {shop.address && <p className="mt-1 truncate text-xs text-[#94849A]">{shop.address}</p>}
           </div>
         </div>
 
@@ -144,7 +174,7 @@ export default function ShopPage() {
           className="mt-4"
           value={query}
           onChange={setQuery}
-          placeholder="Search products in this shop..."
+          placeholder="Search in this shop..."
         />
 
         {categories.length > 1 && (
@@ -155,11 +185,11 @@ export default function ShopPage() {
 
         <div className="mt-4">
           {loading ? (
-            <ProductGridSkeleton />
+            <ProductGridSkeleton count={6} />
           ) : error ? (
             <ErrorState error={error} onRetry={reload} title="Could not load products" />
           ) : visible.length ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
               {visible.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
@@ -180,4 +210,3 @@ export default function ShopPage() {
     </div>
   )
 }
-

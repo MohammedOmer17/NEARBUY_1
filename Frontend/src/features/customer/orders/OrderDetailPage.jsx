@@ -23,6 +23,7 @@ import { formatCurrency, formatDateTime, formatItemQuantity, qrSrc } from '../..
 import { PAYMENT_METHOD_LABEL, TERMINAL } from '../../../utils/orderMeta'
 import PageHeader from '../../../components/shared/PageHeader'
 import OrderTimeline from '../../../components/shared/OrderTimeline'
+import ProductImage from '../../../components/shared/ProductImage'
 import { OrderStatusBadge, PaymentStatusBadge } from '../../../components/shared/StatusBadge'
 import LiveTrackingModal from './LiveTrackingModal'
 import ErrorState from '../../../components/ui/ErrorState'
@@ -32,14 +33,15 @@ import Button from '../../../components/ui/Button'
 
 function UpiPanel({ order, onMarkPaid, marking }) {
   const { showToast } = useToast()
+  const shopId = order?.shopId
   const info = useAsync(
-    () => shopApi.paymentInfo(order.shopId),
-    [order.shopId],
-    { enabled: order.paymentStatus === 'pending' || order.paymentStatus === 'customer_marked_paid' },
+    () => (shopId ? shopApi.paymentInfo(shopId) : Promise.resolve(null)),
+    [shopId],
+    { enabled: Boolean(shopId) && (order?.paymentStatus === 'pending' || order?.paymentStatus === 'customer_marked_paid') },
   )
   const upiLink = info.data?.upiId
-    ? `upi://pay?pa=${encodeURIComponent(info.data.upiId)}&am=${order.totalAmount}&cu=INR&tn=${encodeURIComponent(
-        `NearBuy order ${order.id.slice(-6)}`,
+    ? `upi://pay?pa=${encodeURIComponent(info.data.upiId)}&am=${order?.totalAmount || 0}&cu=INR&tn=${encodeURIComponent(
+        `NearBuy order ${String(order?.id || order?._id || '').slice(-6)}`,
       )}`
     : ''
 
@@ -52,16 +54,16 @@ function UpiPanel({ order, onMarkPaid, marking }) {
     }
   }
 
-  if (order.paymentStatus === 'paid') return null
-  const marked = order.paymentStatus === 'customer_marked_paid'
+  if (order?.paymentStatus === 'paid') return null
+  const marked = order?.paymentStatus === 'customer_marked_paid'
 
   return (
-    <section className="rounded-2xl bg-white p-4 shadow-card border border-line">
-      <h2 className="font-bold text-sm text-ink">Pay {formatCurrency(order.totalAmount)} to the shop</h2>
+    <section className="rounded-2xl bg-[#211522] p-4 shadow-card border border-[#593650]">
+      <h2 className="font-bold text-sm text-white">Pay {formatCurrency(order?.totalAmount || 0)} to the shop</h2>
       {info.loading ? (
         <Skeleton className="mt-3 h-44 rounded-2xl" />
       ) : info.error ? (
-        <p role="alert" className="mt-3 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
+        <p role="alert" className="mt-3 rounded-xl bg-amber-500/15 border border-amber-500/30 p-3 text-xs text-[#F5A623]">
           {getErrorMessage(info.error, 'Store payment details are not available.')}
         </p>
       ) : (
@@ -70,16 +72,17 @@ function UpiPanel({ order, onMarkPaid, marking }) {
             <img
               src={qrSrc(info.data.qrCode)}
               alt="Shop UPI QR code"
-              className="h-44 w-44 rounded-2xl border border-line object-contain p-2"
+              className="h-44 w-44 rounded-2xl border border-[#593650] bg-white object-contain p-2"
+              onError={(e) => { e.currentTarget.style.display = 'none' }}
             />
           ) : (
-            <p className="text-xs text-mute py-2">The shop has not uploaded a QR code image.</p>
+            <p className="text-xs text-[#94849A] py-2">The shop has not uploaded a QR code image.</p>
           )}
 
           {info.data?.upiId && (
             <button
               onClick={copy}
-              className="mt-3 flex items-center gap-1.5 rounded-full bg-purple-50 px-4 py-1.5 text-xs font-bold text-purple-700 active:scale-95 transition"
+              className="mt-3 flex items-center gap-1.5 rounded-full bg-[#2B1B2D] border border-[#593650] px-4 py-1.5 text-xs font-bold text-[#F58AD8] active:scale-95 transition"
             >
               <Copy className="h-3.5 w-3.5" /> UPI ID: {info.data.upiId}
             </button>
@@ -88,7 +91,7 @@ function UpiPanel({ order, onMarkPaid, marking }) {
           {upiLink && !marked && (
             <a
               href={upiLink}
-              className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-accent-500 hover:underline"
+              className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#EC55C8] hover:underline"
             >
               <Smartphone className="h-3.5 w-3.5" /> Open installed UPI app
             </a>
@@ -97,17 +100,17 @@ function UpiPanel({ order, onMarkPaid, marking }) {
       )}
 
       {marked ? (
-        <p className="mt-4 rounded-xl bg-amber-50 p-2.5 text-center text-xs font-semibold text-amber-800">
+        <p className="mt-4 rounded-xl bg-amber-500/15 border border-amber-500/30 p-2.5 text-center text-xs font-semibold text-[#F5A623]">
           Marked as Paid. Awaiting shop owner confirmation.
         </p>
       ) : (
         <>
-          <p className="mt-3 text-[11px] text-mute text-center">
+          <p className="mt-3 text-[11px] text-[#94849A] text-center">
             After sending payment, tap the button below. The shopkeeper confirms upon receipt.
           </p>
           <Button
             full
-            className="mt-2.5 bg-accent-500 font-bold text-xs"
+            className="mt-2.5 text-xs"
             loading={marking}
             onClick={onMarkPaid}
           >
@@ -163,7 +166,7 @@ export default function OrderDetailPage() {
 
   if (loading && !order) {
     return (
-      <div>
+      <div className="min-h-screen bg-[#100A14] text-white">
         <PageHeader title="Order Details" fallback={ROUTES.orders} />
         <div className="space-y-3 p-4">
           <Skeleton className="h-36 rounded-2xl" />
@@ -175,7 +178,7 @@ export default function OrderDetailPage() {
 
   if (error || !order) {
     return (
-      <div>
+      <div className="min-h-screen bg-[#100A14] text-white">
         <PageHeader title="Order Details" fallback={ROUTES.orders} />
         <ErrorState error={error} onRetry={reload} title="Could not load order" />
       </div>
@@ -226,31 +229,31 @@ export default function OrderDetailPage() {
   const isCompleted = order.status === 'completed'
 
   return (
-    <div className="pb-16">
+    <div className="min-h-screen bg-[#100A14] text-white pb-16">
       <PageHeader title="Order Details" fallback={ROUTES.orders} />
 
       <div className="space-y-4 px-4 pt-3">
         {state?.justPlaced && (
-          <div className="flex items-center gap-3 rounded-2xl bg-pink-50 p-3.5 text-accent-600 border border-pink-100">
-            <CheckCircle2 className="h-6 w-6 shrink-0 text-accent-500" />
+          <div className="flex items-center gap-3 rounded-2xl bg-[#EC55C8]/15 border border-[#EC55C8]/30 p-3.5 text-[#F58AD8]">
+            <CheckCircle2 className="h-6 w-6 shrink-0 text-[#EC55C8]" />
             <div>
-              <p className="text-xs font-bold">Order Placed Successfully</p>
-              <p className="text-[11px] text-mute">{order.shopName} will accept and prepare your order.</p>
+              <p className="text-xs font-bold text-white">Order Placed Successfully</p>
+              <p className="text-[11px] text-[#94849A]">{order.shopName} will accept and prepare your order.</p>
             </div>
           </div>
         )}
 
-        {/* Order Header & Status Card matching Storyboard Screen 12 */}
-        <section className="rounded-2xl bg-white p-4 shadow-card border border-line space-y-3">
-          <div className="flex items-start justify-between gap-2 border-b border-line pb-3">
+        {/* Order Header & Status Card */}
+        <section className="rounded-2xl bg-[#211522] p-4 shadow-card border border-[#593650] space-y-3">
+          <div className="flex items-start justify-between gap-2 border-b border-[#593650] pb-3">
             <div className="min-w-0">
-              <h1 className="truncate text-base font-extrabold text-ink">{order.shopName}</h1>
-              <p className="text-[11px] font-semibold text-accent-600">
-                Order ID: #{order.id.slice(-8).toUpperCase()}
+              <h1 className="truncate text-base font-extrabold text-white">{order?.shopName || 'Shop'}</h1>
+              <p className="text-[11px] font-semibold text-[#EC55C8]">
+                Order ID: #{String(order?.id || order?._id || '').slice(-8).toUpperCase()}
               </p>
-              <p className="text-[10px] text-mute">{formatDateTime(order.createdAt)}</p>
+              <p className="text-[10px] text-[#94849A]">{formatDateTime(order?.createdAt)}</p>
             </div>
-            <OrderStatusBadge status={order.status} />
+            <OrderStatusBadge status={order?.status} />
           </div>
 
           {/* Timeline */}
@@ -264,7 +267,7 @@ export default function OrderDetailPage() {
               <Button
                 full
                 onClick={() => setTrackingOpen(true)}
-                className="bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md shadow-pink-500/25"
+                className="text-xs flex items-center justify-center gap-2 shadow-md shadow-pink-500/25"
               >
                 <Bike className="h-4 w-4" /> Live Delivery Tracking
               </Button>
@@ -273,51 +276,51 @@ export default function OrderDetailPage() {
         </section>
 
         {/* UPI Payment panel if applicable */}
-        {order.paymentMethod === 'shop_upi' && order.status !== 'cancelled' && (
+        {order?.paymentMethod === 'shop_upi' && order?.status !== 'cancelled' && (
           <UpiPanel order={order} onMarkPaid={markPaid} marking={marking} />
         )}
 
         {/* Fulfillment Card */}
-        <section className="rounded-2xl bg-white p-4 shadow-card border border-line space-y-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-mute flex items-center gap-1.5">
-            {isPickup ? <Store className="h-4 w-4 text-purple-600" /> : <Bike className="h-4 w-4 text-accent-500" />}
+        <section className="rounded-2xl bg-[#211522] p-4 shadow-card border border-[#593650] space-y-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#94849A] flex items-center gap-1.5">
+            {isPickup ? <Store className="h-4 w-4 text-[#F58AD8]" /> : <Bike className="h-4 w-4 text-[#EC55C8]" />}
             {isPickup ? 'Pickup Information' : 'Delivery Address'}
           </h2>
 
           {isPickup ? (
             <div>
-              <p className="text-xs font-bold text-ink">{order.shopName}</p>
-              <p className="text-xs text-mute mt-0.5">{order.shopAddress || 'Collect from store counter'}</p>
+              <p className="text-xs font-bold text-white">{order?.shopName || 'Shop'}</p>
+              <p className="text-xs text-[#94849A] mt-0.5">{order?.shopAddress || 'Collect from store counter'}</p>
               <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order.shopAddress || 'store')}`}
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(order?.shopAddress || 'store')}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-accent-500 hover:underline"
+                className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-[#EC55C8] hover:underline"
               >
                 <Navigation className="h-3.5 w-3.5" /> Directions in Maps
               </a>
             </div>
           ) : (
             <div className="space-y-2">
-              <p className="text-xs text-ink font-semibold">{order.deliveryAddress || 'Address on file'}</p>
+              <p className="text-xs text-white font-semibold">{order?.deliveryAddress || 'Address on file'}</p>
 
               {/* Assigned Partner details */}
-              {order.captainName && (
-                <div className="rounded-xl border border-line bg-canvas p-2.5 flex items-center justify-between mt-2">
+              {order?.captainName && (
+                <div className="rounded-xl border border-[#593650] bg-[#170F1B] p-2.5 flex items-center justify-between mt-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 rounded-full bg-pink-100 border border-pink-200 grid place-items-center text-accent-600 font-bold shrink-0">
+                    <div className="h-8 w-8 rounded-full bg-[#2B1B2D] border border-[#593650] grid place-items-center text-[#EC55C8] font-bold shrink-0">
                       <Bike className="h-4 w-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold text-mute">Assigned Partner</p>
-                      <p className="text-xs font-bold text-ink">{order.captainName}</p>
-                      <p className="text-[10px] text-mute">{order.captainVehicle || 'Verified NearBuy Partner'}</p>
+                      <p className="text-[10px] font-semibold text-[#94849A]">Assigned Partner</p>
+                      <p className="text-xs font-bold text-white">{order.captainName}</p>
+                      <p className="text-[10px] text-[#94849A]">{order.captainVehicle || 'Verified NearBuy Partner'}</p>
                     </div>
                   </div>
                   {order.captainPhone && (
                     <a
                       href={`tel:${order.captainPhone}`}
-                      className="grid h-8 w-8 place-items-center rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200 active:scale-95 transition shrink-0"
+                      className="grid h-8 w-8 place-items-center rounded-full bg-[#20C878]/20 text-[#20C878] border border-[#20C878]/30 active:scale-95 transition shrink-0"
                       aria-label="Call partner"
                     >
                       <Smartphone className="h-3.5 w-3.5" />
@@ -330,144 +333,74 @@ export default function OrderDetailPage() {
         </section>
 
         {/* Order Items Breakdown */}
-        <section className="rounded-2xl bg-white p-4 shadow-card border border-line space-y-2.5">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-mute border-b border-line pb-2">
-            Items ({order.items.length})
+        <section className="rounded-2xl bg-[#211522] p-4 shadow-card border border-[#593650] space-y-2.5">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#94849A] border-b border-[#593650] pb-2">
+            Items ({order?.items?.length || 0})
           </h2>
 
-          <ul className="space-y-1.5 text-xs">
-            {order.items.map((i, idx) => (
-              <li key={idx} className="flex justify-between items-center text-ink">
-                <span>{formatItemQuantity(i.quantity, i.unit, i.name)}</span>
-                <span className="font-bold">{formatCurrency(i.price * i.quantity)}</span>
+          <ul className="space-y-2 text-xs">
+            {(order?.items || []).map((i, idx) => (
+              <li key={i?.productId || idx} className="flex items-center gap-3 text-white">
+                <div className="h-10 w-10 shrink-0 rounded-lg bg-[#170F1B] border border-[#593650] p-0.5 flex items-center justify-center">
+                  <ProductImage src={i?.image} alt={i?.name || ''} category={i?.category || ''}
+                    className="h-full w-full object-contain" />
+                </div>
+                <span className="min-w-0 flex-1">{formatItemQuantity(i?.quantity, i?.unit, i?.name)}</span>
+                <span className="font-bold">{formatCurrency((Number(i?.price) || 0) * (Number(i?.quantity) || 0))}</span>
               </li>
             ))}
           </ul>
 
-          <div className="border-t border-line pt-2 flex justify-between text-xs text-mute">
-            <span>Payment Method</span>
-            <span className="font-semibold text-ink">{PAYMENT_METHOD_LABEL[order.paymentMethod] || 'UPI / Cash'}</span>
+          <div className="border-t border-[#593650] pt-2 flex justify-between text-xs text-[#94849A]">
+            <span>Items total</span>
+            <span className="font-semibold text-white">{formatCurrency(order?.itemsTotal || order?.totalAmount || 0)}</span>
           </div>
 
-          <div className="flex justify-between items-center text-xs text-mute">
-            <span>Payment Status</span>
-            <PaymentStatusBadge status={order.paymentStatus} />
-          </div>
-
-          <div className="border-t border-line pt-2 flex justify-between text-sm font-black text-ink">
-            <span>Total Amount</span>
-            <span className="text-base text-accent-600 font-extrabold">{formatCurrency(order.totalAmount)}</span>
+          <div className="flex justify-between border-t border-[#593650] pt-2 text-sm font-black text-white">
+            <span>Total paid</span>
+            <span className="text-[#EC55C8]">{formatCurrency(order?.totalAmount || 0)}</span>
           </div>
         </section>
 
-        {/* Rate & Reorder Section matching Storyboard Screen 14 */}
-        {isCompleted && (
-          <section className="rounded-2xl bg-white p-4 shadow-card border border-line space-y-3">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-mute border-b border-line pb-2">
-              Rate Order & Reorder
-            </h2>
-
-            {!reviewSubmitted ? (
-              <div className="space-y-2">
-                <p className="text-xs font-bold text-ink">How was your order from {order.shopName}?</p>
-                <div className="flex gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      className="p-1 text-amber-400 hover:scale-110 transition"
-                    >
-                      <Star className={`h-6 w-6 ${star <= rating ? 'fill-amber-400 text-amber-400' : 'text-slate-200'}`} />
-                    </button>
-                  ))}
-                </div>
-
-                <textarea
-                  rows={2}
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  placeholder="Any feedback? (Great service and fresh products!)"
-                  className="w-full text-xs p-2.5 rounded-xl border border-line bg-canvas outline-none focus:border-accent-500"
-                />
-
-                <Button
-                  size="sm"
-                  variant="soft"
-                  onClick={() => {
-                    setReviewSubmitted(true)
-                    showToast('Thank you for your rating!')
-                  }}
-                  className="text-xs font-bold"
-                >
-                  Submit Feedback
-                </Button>
-              </div>
-            ) : (
-              <p className="text-xs font-semibold text-emerald-600 bg-emerald-50 p-2.5 rounded-xl">
-                ★ Rating submitted! Thank you for supporting your local kirana store.
-              </p>
-            )}
-
-            {/* Reorder Items Row */}
-            <div className="border-t border-line pt-3">
-              <h3 className="text-xs font-bold text-ink mb-2">Reorder Items</h3>
-              <div className="space-y-2">
-                {order.items.map((i, idx) => (
-                  <div key={idx} className="flex items-center justify-between text-xs bg-canvas p-2.5 rounded-xl border border-line">
-                    <div>
-                      <p className="font-bold text-ink">{i.name}</p>
-                      <p className="text-[10px] text-mute">{formatCurrency(i.price)}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleReorderItem(i)}
-                      className="grid h-7 w-7 place-items-center rounded-full bg-accent-500 text-white shadow-xs active:scale-95 transition"
-                      aria-label="Add item again"
-                    >
-                      <Plus className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* Cancellation Button if allowed */}
+        {/* Cancel Button if eligible */}
         {cancellable && (
-          <Button full variant="danger" onClick={() => setCancelOpen(true)} className="text-xs font-bold">
-            Cancel Order
-          </Button>
+          <div className="pt-2">
+            <Button
+              full
+              variant="danger"
+              onClick={() => setCancelOpen(true)}
+              className="text-xs font-bold"
+            >
+              Cancel Order
+            </Button>
+          </div>
         )}
       </div>
 
-      {/* Cancel Order Modal */}
+      {/* Cancel Order Confirmation Modal */}
       <Modal
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
         title="Cancel this order?"
         footer={
-          <div className="space-y-2 w-full">
-            <Button full variant="danger" loading={cancelling} onClick={cancel} className="font-bold text-xs">
-              Confirm Cancel
+          <div className="flex gap-2">
+            <Button full variant="outline" onClick={() => setCancelOpen(false)}>
+              Keep order
             </Button>
-            <Button full variant="ghost" onClick={() => setCancelOpen(false)} className="text-xs">
-              Keep Order
+            <Button full variant="danger" loading={cancelling} onClick={cancel}>
+              Yes, cancel
             </Button>
           </div>
         }
       >
-        <p className="text-xs text-mute py-1">
-          Your order will be cancelled immediately and the store will be notified.
-        </p>
+        Are you sure you want to cancel this order? This cannot be undone once processed.
       </Modal>
 
-      {/* Live Tracking Modal matching Screen 13 */}
+      {/* Live Tracking Modal */}
       <LiveTrackingModal
-        order={order}
         open={trackingOpen}
         onClose={() => setTrackingOpen(false)}
+        order={order}
       />
     </div>
   )

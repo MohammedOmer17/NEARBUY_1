@@ -17,11 +17,11 @@ export default function QuantityStepper({
           disabled={disabled || value <= min}
           onClick={() => onChange(value - 1)}
           aria-label="Decrease quantity"
-          className="grid h-7 w-7 place-items-center rounded-lg bg-pink-50 text-accent-600 border border-pink-200 hover:bg-pink-100 active:scale-95 transition disabled:opacity-40"
+          className="grid h-7 w-7 place-items-center rounded-lg bg-[#2B1B2D] text-[#EC55C8] border border-[#593650] hover:bg-[#38233b] active:scale-95 transition disabled:opacity-30"
         >
           <Minus className="h-3.5 w-3.5" />
         </button>
-        <span className="min-w-5 text-center text-xs font-bold text-ink tabular-nums" aria-live="polite">
+        <span className="min-w-5 text-center text-xs font-bold text-white tabular-nums" aria-live="polite">
           {value}
         </span>
         <button
@@ -29,7 +29,7 @@ export default function QuantityStepper({
           disabled={disabled || value >= max}
           onClick={() => onChange(value + 1)}
           aria-label="Increase quantity"
-          className="grid h-7 w-7 place-items-center rounded-lg bg-pink-50 text-accent-600 border border-pink-200 hover:bg-pink-100 active:scale-95 transition disabled:opacity-40"
+          className="grid h-7 w-7 place-items-center rounded-lg bg-[#2B1B2D] text-[#EC55C8] border border-[#593650] hover:bg-[#38233b] active:scale-95 transition disabled:opacity-30"
         >
           <Plus className="h-3.5 w-3.5" />
         </button>
@@ -37,20 +37,20 @@ export default function QuantityStepper({
     )
   }
 
-  const h = large ? 'h-12' : 'h-11'
-  const w = large ? 'w-12' : 'w-11'
+  const h = large ? 'h-12' : 'h-10'
+  const w = large ? 'w-10' : 'w-9'
   return (
-    <div className={`inline-flex ${h} items-center rounded-full bg-accent-500 text-white`} role="group" aria-label="Quantity">
+    <div className={`inline-flex ${h} items-center rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] text-white shadow-md shadow-pink-500/20`} role="group" aria-label="Quantity">
       <button
         type="button"
         disabled={disabled}
         onClick={() => onChange(value - 1)}
         aria-label="Decrease quantity"
-        className={`grid ${h} ${w} place-items-center rounded-full active:bg-accent-600 disabled:opacity-60`}
+        className={`grid ${h} ${w} place-items-center rounded-full active:opacity-75 disabled:opacity-40 transition`}
       >
-        <Minus className="h-4 w-4" />
+        <Minus className="h-3.5 w-3.5" />
       </button>
-      <span className={`min-w-6 text-center font-bold tabular-nums ${large ? 'text-lg' : 'text-sm'}`} aria-live="polite">
+      <span className={`min-w-6 text-center font-black tabular-nums ${large ? 'text-lg' : 'text-sm'}`} aria-live="polite">
         {value}
       </span>
       <button
@@ -58,11 +58,10 @@ export default function QuantityStepper({
         disabled={disabled || value >= max}
         onClick={() => onChange(value + 1)}
         aria-label="Increase quantity"
-        className={`grid ${h} ${w} place-items-center rounded-full active:bg-accent-600 disabled:opacity-60`}
+        className={`grid ${h} ${w} place-items-center rounded-full active:opacity-75 disabled:opacity-40 transition`}
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="h-3.5 w-3.5" />
       </button>
     </div>
   )
 }
-

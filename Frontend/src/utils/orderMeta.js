@@ -28,9 +28,11 @@ const PICKUP = [
 ]
 
 export function timelineFor(order) {
+  if (!order) return { steps: PICKUP, current: 0 }
   const steps = order.fulfillmentType === 'delivery' ? DELIVERY : PICKUP
-  const idx = steps.findIndex((s) => s.key === order.status || s.alias?.includes(order.status))
-  return { steps, current: idx }
+  const status = String(order.status || order.orderStatus || 'placed').toLowerCase()
+  const idx = steps.findIndex((s) => s.key === status || s.alias?.includes(status))
+  return { steps, current: Math.max(0, idx) }
 }
 
 export const PAYMENT_METHOD_LABEL = { shop_upi: 'Shop UPI', cod: 'Cash on Delivery' }

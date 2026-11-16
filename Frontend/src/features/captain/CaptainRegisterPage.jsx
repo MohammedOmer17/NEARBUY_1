@@ -89,15 +89,15 @@ export default function CaptainRegisterPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-canvas text-ink">
+    <div className="flex min-h-screen flex-col bg-[#100A14] text-white">
       {/* Brand Header */}
-      <div className="bg-gradient-to-br from-brand-600 via-pink-600 to-purple-900 px-6 pt-12 pb-10 text-white">
-        <div className="mx-auto max-w-sm">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur">
-            <Bike className="h-4 w-4" /> NearBuy Delivery Partner
+      <div className="bg-gradient-to-br from-[#170F1B] via-[#211522] to-[#100A14] border-b border-[#593650] px-6 pt-12 pb-10 text-white">
+        <div className="mx-auto max-w-sm text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#EC55C8]/15 border border-[#EC55C8]/30 px-3 py-1 text-xs font-semibold text-[#F58AD8] backdrop-blur">
+            <Bike className="h-4 w-4 text-[#EC55C8]" /> NearBuy Delivery Partner
           </div>
-          <h1 className="mt-4 text-3xl font-black tracking-tight">Become a Captain</h1>
-          <p className="mt-1 text-sm text-brand-100">
+          <h1 className="mt-4 text-3xl font-black tracking-tight text-white">Join as Delivery Partner</h1>
+          <p className="mt-2 text-xs text-[#C4B4C9]">
             {step === 1 && 'Step 1 of 3: Enter your personal contact info.'}
             {step === 2 && 'Step 2 of 3: Enter your vehicle details.'}
             {step === 3 && 'Step 3 of 3: Verification & compliance.'}
@@ -109,7 +109,7 @@ export default function CaptainRegisterPage() {
               <div
                 key={s}
                 className={`h-1.5 flex-1 rounded-full transition-all ${
-                  s <= step ? 'bg-white' : 'bg-white/30'
+                  s <= step ? 'bg-gradient-to-r from-[#EC55C8] to-[#B65DDA]' : 'bg-[#593650]'
                 }`}
               />
             ))}
@@ -118,17 +118,17 @@ export default function CaptainRegisterPage() {
       </div>
 
       {/* Form Content */}
-      <div className="-mt-4 flex-1 rounded-t-3xl bg-white px-6 pt-8 pb-10 shadow-card">
-        <div className="mx-auto max-w-sm">
+      <div className="flex-1 px-4 py-8">
+        <div className="mx-auto max-w-sm rounded-3xl border border-[#593650] bg-[#211522] p-6 shadow-card">
           {error && (
-            <div className="mb-4 rounded-2xl bg-rose-50 p-3 text-xs text-rose-800">
+            <div className="mb-4 rounded-2xl bg-rose-950/60 border border-rose-800/80 p-3 text-xs text-rose-200">
               {error}
             </div>
           )}
 
           {step === 1 && (
             <form onSubmit={handleNextStep} className="space-y-4">
-              <h2 className="text-base font-bold text-ink">Personal Information</h2>
+              <h2 className="text-base font-bold text-white">Personal Information</h2>
 
               <Input
                 label="Full Name"
@@ -136,7 +136,7 @@ export default function CaptainRegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                leftIcon={<User className="h-4 w-4 text-mute" />}
+                leftIcon={<User className="h-4 w-4 text-[#94849A]" />}
               />
 
               <Input
@@ -146,7 +146,7 @@ export default function CaptainRegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                leftIcon={<Mail className="h-4 w-4 text-mute" />}
+                leftIcon={<Mail className="h-4 w-4 text-[#94849A]" />}
               />
 
               <Input
@@ -156,7 +156,7 @@ export default function CaptainRegisterPage() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
-                leftIcon={<Phone className="h-4 w-4 text-mute" />}
+                leftIcon={<Phone className="h-4 w-4 text-[#94849A]" />}
               />
 
               <Input
@@ -166,14 +166,14 @@ export default function CaptainRegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                leftIcon={<Lock className="h-4 w-4 text-mute" />}
+                leftIcon={<Lock className="h-4 w-4 text-[#94849A]" />}
               />
 
               <Button
                 type="submit"
                 variant="primary"
                 full
-                className="mt-2 bg-gradient-to-r from-brand-600 to-pink-600 py-3.5"
+                className="mt-2 bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] py-3.5 font-bold shadow-md"
               >
                 Continue to Vehicle Details
                 <ArrowRight className="h-4 w-4" />
@@ -184,18 +184,18 @@ export default function CaptainRegisterPage() {
           {step === 2 && (
             <form onSubmit={handleNextStep} className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-ink">Vehicle Information</h2>
+                <h2 className="text-base font-bold text-white">Vehicle Information</h2>
                 <button
                   type="button"
                   onClick={() => setStep(1)}
-                  className="flex items-center gap-1 text-xs font-semibold text-brand-600"
+                  className="flex items-center gap-1 text-xs font-semibold text-[#EC55C8] hover:text-[#F58AD8]"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> Back
                 </button>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-ink mb-1.5">Vehicle Type</label>
+                <label className="block text-xs font-bold text-[#C4B4C9] mb-1.5">Vehicle Type</label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     { id: 'bike', label: 'Motorcycle', icon: Bike },
@@ -209,8 +209,8 @@ export default function CaptainRegisterPage() {
                       onClick={() => setVehicleType(id)}
                       className={`flex items-center gap-2 rounded-2xl border p-3 text-xs font-semibold transition ${
                         vehicleType === id
-                          ? 'border-brand-600 bg-brand-50 text-brand-700'
-                          : 'border-slate-200 bg-white text-ink hover:bg-slate-50'
+                          ? 'border-[#EC55C8] bg-pink-950/60 text-[#F58AD8]'
+                          : 'border-[#593650] bg-[#170F1B] text-[#C4B4C9] hover:bg-[#2B1B2D]'
                       }`}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -230,7 +230,7 @@ export default function CaptainRegisterPage() {
 
               <Input
                 label="Registration Plate Number"
-                placeholder="e.g. MH02AB1234"
+                placeholder="e.g. TS 09 XX 1234"
                 value={vehicleNumber}
                 onChange={(e) => setVehicleNumber(e.target.value)}
                 required
@@ -240,7 +240,7 @@ export default function CaptainRegisterPage() {
                 type="submit"
                 variant="primary"
                 full
-                className="mt-2 bg-gradient-to-r from-brand-600 to-pink-600 py-3.5"
+                className="mt-2 bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] py-3.5 font-bold shadow-md"
               >
                 Continue to Verification
                 <ArrowRight className="h-4 w-4" />
@@ -251,11 +251,11 @@ export default function CaptainRegisterPage() {
           {step === 3 && (
             <form onSubmit={handleFinalSubmit} className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-base font-bold text-ink">Verification & Agreement</h2>
+                <h2 className="text-base font-bold text-white">Verification & Agreement</h2>
                 <button
                   type="button"
                   onClick={() => setStep(2)}
-                  className="flex items-center gap-1 text-xs font-semibold text-brand-600"
+                  className="flex items-center gap-1 text-xs font-semibold text-[#EC55C8] hover:text-[#F58AD8]"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> Back
                 </button>
@@ -268,20 +268,20 @@ export default function CaptainRegisterPage() {
                 onChange={(e) => setLicenseNumber(e.target.value)}
               />
 
-              <div className="rounded-2xl border border-slate-200 bg-canvas p-4 text-xs space-y-2.5">
-                <div className="flex items-center gap-2 font-bold text-ink">
-                  <Shield className="h-4 w-4 text-brand-600" /> Partner Safety & Terms
+              <div className="rounded-2xl border border-[#593650] bg-[#170F1B] p-4 text-xs space-y-2.5">
+                <div className="flex items-center gap-2 font-bold text-white">
+                  <Shield className="h-4 w-4 text-[#EC55C8]" /> Partner Safety & Terms
                 </div>
-                <div className="flex items-start gap-2 text-mute">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                <div className="flex items-start gap-2 text-[#94849A]">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-[#20C878] mt-0.5" />
                   <span>I agree to maintain a valid driving license and vehicle registration.</span>
                 </div>
-                <div className="flex items-start gap-2 text-mute">
-                  <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                <div className="flex items-start gap-2 text-[#94849A]">
+                  <CheckCircle2 className="h-4 w-4 shrink-0 text-[#20C878] mt-0.5" />
                   <span>I agree to deliver customer packages safely and collect cash payments accurately.</span>
                 </div>
-                <div className="flex items-start gap-2 text-mute">
-                  <FileCheck className="h-4 w-4 shrink-0 text-emerald-600 mt-0.5" />
+                <div className="flex items-start gap-2 text-[#94849A]">
+                  <FileCheck className="h-4 w-4 shrink-0 text-[#20C878] mt-0.5" />
                   <span>Document verification is pre-approved for local test partner environment.</span>
                 </div>
               </div>
@@ -291,7 +291,7 @@ export default function CaptainRegisterPage() {
                 variant="primary"
                 full
                 disabled={loading}
-                className="mt-4 bg-gradient-to-r from-brand-600 to-pink-600 py-3.5"
+                className="mt-4 bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] py-3.5 font-bold shadow-md"
               >
                 {loading ? 'Creating Captain Account…' : 'Complete Registration & Start'}
                 <CheckCircle2 className="h-4 w-4" />
@@ -299,11 +299,11 @@ export default function CaptainRegisterPage() {
             </form>
           )}
 
-          <div className="mt-6 text-center text-xs text-mute">
+          <div className="mt-6 text-center text-xs text-[#94849A]">
             Already registered as Captain?{' '}
             <Link
               to={ROUTES.captainLogin}
-              className="font-bold text-brand-600 hover:text-brand-700 underline"
+              className="font-bold text-[#EC55C8] hover:text-[#F58AD8] underline"
             >
               Sign In
             </Link>

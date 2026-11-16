@@ -105,48 +105,64 @@ export default function ProductPage() {
     setSelectedOffer(offer)
   }
 
-  const handleConfirmShopAndCatalogue = async () => {
-    if (!selectedOffer) return
+  const handleSelectOfferAndShop = async (offer) => {
+    if (!offer) return
+    const shopId = offer.shop?.id || offer.shopId || offer.shop?._id
+    if (!shopId) return
+
     setSubmitting(true)
+    const productPayload = {
+      id: offer.id,
+      _id: offer.id,
+      productId: offer.id,
+      name: offer.name,
+      price: offer.price,
+      image: offer.image || product?.image,
+      category: offer.category || product?.category,
+      brand: offer.brand || product?.brand,
+      unit: offer.unit,
+      packSize: offer.packSize,
+      shopId: shopId,
+      shopName: offer.shop?.name || offer.shopName,
+    }
+
     try {
-      // Add selected product from this specific shop into the cart
-      const added = await addItem(selectedOffer, 1)
-      if (added === false) {
-        // User cancelled in conflict modal
-        setSubmitting(false)
-        return
-      }
-
-      showToast(`Added ${selectedOffer.name} to cart from ${selectedOffer.shop?.name || 'shop'}`)
-
-      // Navigate to the chosen shop's catalogue
-      const targetShopId = selectedOffer.shop?.id || selectedOffer.shopId
-      setSelectedOffer(null)
-      navigate(ROUTES.shop(targetShopId), {
-        state: {
-          shop: selectedOffer.shop,
-        },
-      })
+      // 1. Add the chosen product offer from this shop into the cart
+      await addItem(productPayload, 1)
+      showToast(`Added ${offer.name} to cart`)
     } catch (err) {
-      showToast(err.message || 'Could not choose shop', 'error')
+      console.warn('Could not add to cart before navigating:', err)
     } finally {
       setSubmitting(false)
+      setSelectedOffer(null)
     }
+
+    // 2. Navigate into that shop's catalogue with state so customer can continue shopping with item in cart
+    navigate(ROUTES.shop(shopId), {
+      state: {
+        shop: offer.shop,
+        addedItem: productPayload,
+      },
+    })
+  }
+
+  const handleConfirmShopAndCatalogue = async () => {
+    if (!selectedOffer) return
+    await handleSelectOfferAndShop(selectedOffer)
   }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-canvas pb-16">
-        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-line bg-white/80 px-4 backdrop-blur">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <Skeleton className="h-5 w-32" />
-          <Skeleton className="h-8 w-16 rounded-full" />
+      <div className="min-h-screen bg-[#100A14] text-white">
+        <header className="sticky top-0 z-20 flex h-14 items-center border-b border-[#593650] bg-[#100A14] px-4">
+          <Skeleton className="h-9 w-9 rounded-full" />
+          <Skeleton className="ml-3 h-5 w-32" />
         </header>
-        <div className="space-y-4 p-4">
+        <div className="p-4 space-y-4">
           <Skeleton className="aspect-square w-full rounded-3xl" />
-          <Skeleton className="h-6 w-3/4" />
+          <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-4 w-1/2" />
-          <div className="space-y-3 pt-4">
+          <div className="pt-4 space-y-3">
             <Skeleton className="h-20 w-full rounded-2xl" />
             <Skeleton className="h-20 w-full rounded-2xl" />
             <Skeleton className="h-20 w-full rounded-2xl" />
@@ -158,17 +174,17 @@ export default function ProductPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-canvas">
-        <header className="sticky top-0 z-20 flex h-14 items-center border-b border-line bg-white px-4">
+      <div className="min-h-screen bg-[#100A14] text-white">
+        <header className="sticky top-0 z-20 flex h-14 items-center border-b border-[#593650] bg-[#100A14] px-4">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="grid h-9 w-9 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white transition active:scale-95"
             aria-label="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="ml-3 text-base font-bold text-ink">Product Details</h1>
+          <h1 className="ml-3 text-base font-bold text-white">Product Details</h1>
         </header>
         <div className="p-4">
           <ErrorState error={error} onRetry={reload} title="Could not load product comparison" />
@@ -179,17 +195,17 @@ export default function ProductPage() {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-canvas">
-        <header className="sticky top-0 z-20 flex h-14 items-center border-b border-line bg-white px-4">
+      <div className="min-h-screen bg-[#100A14] text-white">
+        <header className="sticky top-0 z-20 flex h-14 items-center border-b border-[#593650] bg-[#100A14] px-4">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="grid h-9 w-9 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white transition active:scale-95"
             aria-label="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <h1 className="ml-3 text-base font-bold text-ink">Product</h1>
+          <h1 className="ml-3 text-base font-bold text-white">Product</h1>
         </header>
         <EmptyState
           icon={PackageSearch}
@@ -198,7 +214,7 @@ export default function ProductPage() {
           action={
             <Link
               to={ROUTES.home}
-              className="rounded-full bg-accent-500 px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-pink-500/20"
+              className="rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] px-5 py-2.5 text-xs font-bold text-white shadow-md shadow-pink-500/25"
             >
               Browse Products
             </Link>
@@ -212,19 +228,19 @@ export default function ProductPage() {
   const displayUnit = normalizeUnitLabel(product.unit) || product.unit || 'Standard Pack'
 
   return (
-    <div className="min-h-screen bg-canvas pb-20">
-      {/* Top Header matching Reference Storyboard Screen 2 */}
-      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-line/60 bg-white/90 px-4 backdrop-blur pt-[env(safe-area-inset-top)]">
+    <div className="min-h-screen bg-[#100A14] text-white pb-20">
+      {/* Top Header */}
+      <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-[#593650] bg-[#100A14]/95 px-4 backdrop-blur pt-[env(safe-area-inset-top)]">
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="grid h-9 w-9 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+          className="grid h-9 w-9 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white transition active:scale-95"
           aria-label="Back"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
 
-        <span className="text-xs font-bold uppercase tracking-wider text-mute truncate max-w-[180px]">
+        <span className="text-xs font-bold uppercase tracking-wider text-[#EC55C8] truncate max-w-[180px]">
           {product.brand || 'NearBuy'}
         </span>
 
@@ -233,11 +249,11 @@ export default function ProductPage() {
             type="button"
             onClick={openCart}
             aria-label={`Cart, ${itemCount} items`}
-            className="relative grid h-9 w-9 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+            className="relative grid h-9 w-9 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white transition active:scale-95"
           >
             <ShoppingBag className="h-4 w-4" />
             {itemCount > 0 && (
-              <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-accent-500 px-1 text-[10px] font-bold text-white shadow">
+              <span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] px-1 text-[10px] font-bold text-white shadow">
                 {itemCount}
               </span>
             )}
@@ -245,56 +261,56 @@ export default function ProductPage() {
           <button
             type="button"
             onClick={() => setIsFavorite((f) => !f)}
-            className="grid h-9 w-9 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white transition active:scale-95"
             aria-label="Save to favorites"
           >
             <Heart
               className={`h-4 w-4 transition ${
-                isFavorite ? 'fill-accent-500 text-accent-500 scale-110' : 'text-mute'
+                isFavorite ? 'fill-[#EC55C8] text-[#EC55C8] scale-110' : 'text-[#94849A]'
               }`}
             />
           </button>
           <button
             type="button"
             onClick={handleShare}
-            className="grid h-9 w-9 place-items-center rounded-full bg-canvas text-ink transition active:scale-95"
+            className="grid h-9 w-9 place-items-center rounded-full bg-[#211522] border border-[#593650] text-white transition active:scale-95"
             aria-label="Share product"
           >
-            <Share2 className="h-4 w-4 text-mute" />
+            <Share2 className="h-4 w-4 text-[#94849A]" />
           </button>
         </div>
       </header>
 
-
       <main className="space-y-4 px-4 pt-3">
         {/* Product Image Frame with Dot Pagination Indicator */}
-        <section className="relative overflow-hidden rounded-3xl border border-line bg-white p-6 shadow-card flex flex-col items-center justify-center">
+        <section className="relative overflow-hidden rounded-3xl border border-[#593650] bg-[#211522] p-6 shadow-card flex flex-col items-center justify-center">
           <div className="aspect-square w-full max-w-[240px] flex items-center justify-center">
             <ProductImage
               src={product.image}
               alt={product.name}
+              category={product.category}
               className="h-full w-full object-contain"
             />
           </div>
 
-          {/* Carousel dots matching reference image */}
+          {/* Carousel dots */}
           <div className="mt-4 flex items-center gap-1.5" aria-hidden="true">
-            <span className="h-2 w-5 rounded-full bg-accent-500 transition-all" />
-            <span className="h-1.5 w-1.5 rounded-full bg-line" />
-            <span className="h-1.5 w-1.5 rounded-full bg-line" />
-            <span className="h-1.5 w-1.5 rounded-full bg-line" />
-            <span className="h-1.5 w-1.5 rounded-full bg-line" />
+            <span className="h-2 w-5 rounded-full bg-[#EC55C8] transition-all" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#593650]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#593650]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#593650]" />
+            <span className="h-1.5 w-1.5 rounded-full bg-[#593650]" />
           </div>
         </section>
 
         {/* Product Title and Overview */}
-        <section className="rounded-2xl border border-line bg-white p-4 shadow-card space-y-2">
-          <h1 className="text-xl sm:text-2xl font-black text-ink tracking-tight leading-tight">
+        <section className="rounded-2xl border border-[#593650] bg-[#211522] p-4 shadow-card space-y-2">
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
             {product.name}
           </h1>
 
           {product.description && (
-            <p className="text-xs text-mute font-medium leading-relaxed">
+            <p className="text-xs text-[#94849A] font-medium leading-relaxed">
               {product.description}
             </p>
           )}
@@ -304,20 +320,20 @@ export default function ProductPage() {
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-lg bg-canvas px-2.5 py-1 text-[11px] font-bold text-ink/75 border border-line"
+                className="rounded-lg bg-[#2B1B2D] px-2.5 py-1 text-[11px] font-bold text-[#C4B4C9] border border-[#593650]"
               >
                 {tag}
               </span>
             ))}
-            <span className="rounded-lg bg-pink-50 px-2.5 py-1 text-[11px] font-bold text-accent-600 border border-pink-100">
+            <span className="rounded-lg bg-[#EC55C8]/15 px-2.5 py-1 text-[11px] font-bold text-[#F58AD8] border border-[#EC55C8]/30">
               {displayUnit}
             </span>
           </div>
 
           {/* Available in X nearby shops count banner */}
           <div className="pt-2">
-            <div className="flex items-center gap-2 rounded-xl bg-purple-50/70 px-3 py-2 text-xs font-bold text-purple-900 border border-purple-100/70">
-              <Store className="h-4 w-4 text-purple-700 shrink-0" />
+            <div className="flex items-center gap-2 rounded-xl bg-[#2B1B2D] px-3 py-2 text-xs font-bold text-[#F58AD8] border border-[#593650]">
+              <Store className="h-4 w-4 text-[#EC55C8] shrink-0" />
               <span>
                 Available in {sortedOffers.length}{' '}
                 {sortedOffers.length === 1 ? 'nearby shop' : 'nearby shops'}
@@ -326,10 +342,10 @@ export default function ProductPage() {
           </div>
         </section>
 
-        {/* Multi-Shop Price Comparison Section matching Screen 2 */}
+        {/* Multi-Shop Price Comparison Section */}
         <section className="space-y-3">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="text-sm sm:text-base font-extrabold text-ink">
+            <h2 className="text-sm sm:text-base font-extrabold text-white">
               Compare Prices from Nearby Shops
             </h2>
 
@@ -338,13 +354,13 @@ export default function ProductPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="appearance-none rounded-xl border border-line bg-white pl-2.5 pr-7 py-1.5 text-xs font-bold text-ink shadow-sm focus:outline-none focus:ring-1 focus:ring-accent-500 cursor-pointer"
+                className="appearance-none rounded-xl border border-[#593650] bg-[#211522] pl-2.5 pr-7 py-1.5 text-xs font-bold text-white shadow-sm focus:outline-none focus:border-[#EC55C8] cursor-pointer"
               >
                 <option value="price">Sort by Price</option>
                 <option value="distance">Sort by Distance</option>
                 <option value="price_desc">Highest Price</option>
               </select>
-              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-mute" />
+              <ChevronDown className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#94849A]" />
             </div>
           </div>
 
@@ -365,32 +381,32 @@ export default function ProductPage() {
                     key={offer.id}
                     className={`relative overflow-hidden rounded-2xl p-3.5 transition-all ${
                       isLowest
-                        ? 'border-2 border-emerald-400 bg-emerald-50/20 shadow-sm'
-                        : 'border border-line bg-white shadow-card hover:border-line-dark'
+                        ? 'border-2 border-[#20C878] bg-[#20C878]/10 shadow-sm'
+                        : 'border border-[#593650] bg-[#211522] shadow-card hover:border-[#EC55C8]/60'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       {/* Left: Shop Storefront Avatar */}
                       <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-tr from-pink-100 to-purple-100 text-accent-500 border border-line font-bold text-base shadow-sm">
+                        <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[#2B1B2D] text-[#EC55C8] border border-[#593650] font-bold text-base shadow-sm">
                           <Store className="h-6 w-6" />
                         </div>
 
                         {/* Shop Info */}
                         <div className="min-w-0 flex-1">
-                          <h3 className="truncate text-sm font-extrabold text-ink leading-tight">
+                          <h3 className="truncate text-sm font-extrabold text-white leading-tight">
                             {shopName}
                           </h3>
 
                           {/* Star rating */}
                           <div className="mt-0.5 flex items-center gap-1.5 text-xs">
-                            <span className="flex items-center gap-0.5 font-bold text-amber-600">
-                              <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> 4.5 (210+)
+                            <span className="flex items-center gap-0.5 font-bold text-[#F5A623]">
+                              <Star className="h-3 w-3 fill-[#F5A623] text-[#F5A623]" /> 4.5 (210+)
                             </span>
                           </div>
 
                           {/* Distance and Address */}
-                          <p className="mt-0.5 truncate text-[11px] font-medium text-mute">
+                          <p className="mt-0.5 truncate text-[11px] font-medium text-[#94849A]">
                             📍 {distanceStr ? `${distanceStr} · ` : ''}
                             {shopAddress}
                           </p>
@@ -400,14 +416,14 @@ export default function ProductPage() {
                       {/* Right: Price, Pack, Lowest Badge and Choose Button */}
                       <div className="flex flex-col items-end shrink-0 pl-1">
                         <div className="text-right">
-                          <span className="text-base sm:text-lg font-black text-ink">
+                          <span className="text-base sm:text-lg font-black text-white">
                             {formatCurrency(offer.price)}
                           </span>
-                          <span className="block text-[10px] font-semibold text-mute">
+                          <span className="block text-[10px] font-semibold text-[#94849A]">
                             {offer.packSize || normalizeUnitLabel(offer.unit) || offer.unit || '1 pack'}
                           </span>
                           {isLowest && (
-                            <span className="mt-0.5 inline-block rounded-md bg-emerald-100 px-1.5 py-0.5 text-[9px] font-extrabold text-emerald-800">
+                            <span className="mt-0.5 inline-block rounded-md bg-[#20C878]/20 border border-[#20C878]/40 px-1.5 py-0.5 text-[9px] font-extrabold text-[#20C878]">
                               Lowest Price
                             </span>
                           )}
@@ -415,9 +431,9 @@ export default function ProductPage() {
 
                         <button
                           type="button"
-                          onClick={() => handleChooseOffer(offer)}
+                          onClick={() => handleSelectOfferAndShop(offer)}
                           disabled={offer.isAvailable === false}
-                          className="mt-2 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 px-4 py-1.5 text-xs font-bold text-white shadow-sm shadow-pink-500/20 transition hover:opacity-95 active:scale-95 disabled:opacity-40"
+                          className="mt-2 rounded-xl bg-gradient-to-r from-[#EC55C8] to-[#B65DDA] px-4 py-1.5 text-xs font-bold text-white shadow-sm shadow-pink-500/20 transition hover:brightness-110 active:scale-95 disabled:opacity-40"
                         >
                           Choose
                         </button>
@@ -428,18 +444,18 @@ export default function ProductPage() {
               })}
             </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-line bg-white p-5 text-center">
-              <Store className="mx-auto h-8 w-8 text-mute/50" />
-              <p className="mt-2 text-xs font-bold text-ink">No other shops sell this item currently</p>
-              <p className="mt-0.5 text-[11px] text-mute">
+            <div className="rounded-2xl border border-dashed border-[#593650] bg-[#211522] p-5 text-center">
+              <Store className="mx-auto h-8 w-8 text-[#94849A]" />
+              <p className="mt-2 text-xs font-bold text-white">No other shops sell this item currently</p>
+              <p className="mt-0.5 text-[11px] text-[#94849A]">
                 Check back soon as more local stores update their catalogue.
               </p>
             </div>
           )}
 
-          {/* Advisory Notice Banner matching reference image bottom */}
-          <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-3.5 text-xs text-purple-900 flex items-start gap-2.5">
-            <Info className="h-4 w-4 text-purple-600 shrink-0 mt-0.5" />
+          {/* Advisory Notice Banner */}
+          <div className="rounded-2xl border border-[#593650] bg-[#170F1B] p-3.5 text-xs text-[#C4B4C9] flex items-start gap-2.5">
+            <Info className="h-4 w-4 text-[#EC55C8] shrink-0 mt-0.5" />
             <p className="leading-relaxed text-[11px]">
               Prices may vary by shop. Select a shop to view full catalogue and add more items from
               the same shop.
@@ -448,24 +464,24 @@ export default function ProductPage() {
         </section>
       </main>
 
-      {/* Screen 3: Select Shop & Continue (Confirmation / Selection Panel) */}
+      {/* Select Shop & Continue (Confirmation / Selection Panel) */}
       {selectedOffer && (
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4 animate-fade-in"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 animate-fade-in"
           role="dialog"
           aria-modal="true"
           aria-labelledby="selected-offer-title"
         >
-          <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-line bg-white p-5 shadow-2xl animate-slide-up space-y-4">
+          <div className="w-full max-w-md rounded-t-3xl sm:rounded-3xl border border-[#593650] bg-[#211522] p-5 shadow-2xl animate-slide-up space-y-4 text-white">
             {/* Modal Title and Close */}
-            <div className="flex items-center justify-between border-b border-line pb-3">
-              <h2 id="selected-offer-title" className="text-base font-extrabold text-ink">
+            <div className="flex items-center justify-between border-b border-[#593650] pb-3">
+              <h2 id="selected-offer-title" className="text-base font-extrabold text-white">
                 Selected Offer
               </h2>
               <button
                 type="button"
                 onClick={() => setSelectedOffer(null)}
-                className="grid h-8 w-8 place-items-center rounded-full bg-canvas text-mute hover:text-ink transition"
+                className="grid h-8 w-8 place-items-center rounded-full bg-[#170F1B] text-[#94849A] hover:text-white transition"
                 aria-label="Close"
               >
                 <X className="h-4 w-4" />
@@ -473,20 +489,20 @@ export default function ProductPage() {
             </div>
 
             {/* Selected Shop Info Card */}
-            <div className="flex items-center gap-3 rounded-2xl border border-line bg-canvas/60 p-3.5">
-              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-tr from-pink-100 to-purple-100 text-accent-500 font-bold border border-line">
+            <div className="flex items-center gap-3 rounded-2xl border border-[#593650] bg-[#170F1B] p-3.5">
+              <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-[#2B1B2D] text-[#EC55C8] font-bold border border-[#593650]">
                 <Store className="h-6 w-6" />
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="truncate text-sm font-extrabold text-ink">
+                <h3 className="truncate text-sm font-extrabold text-white">
                   {selectedOffer.shop?.name || selectedOffer.shopName || 'Selected Kirana Store'}
                 </h3>
                 <div className="flex items-center gap-1.5 text-xs">
-                  <span className="flex items-center gap-0.5 font-bold text-amber-600">
-                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" /> 4.5 (210+)
+                  <span className="flex items-center gap-0.5 font-bold text-[#F5A623]">
+                    <Star className="h-3 w-3 fill-[#F5A623] text-[#F5A623]" /> 4.5 (210+)
                   </span>
                 </div>
-                <p className="mt-0.5 truncate text-[11px] font-medium text-mute">
+                <p className="mt-0.5 truncate text-[11px] font-medium text-[#94849A]">
                   📍{' '}
                   {formatDistance(selectedOffer.distanceKm ?? selectedOffer.shop?.distanceKm)
                     ? `${formatDistance(selectedOffer.distanceKm ?? selectedOffer.shop?.distanceKm)} · `
@@ -497,42 +513,43 @@ export default function ProductPage() {
             </div>
 
             {/* Selected Product Summary Row */}
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-white p-3 shadow-sm">
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#593650] bg-[#170F1B] p-3 shadow-sm">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-12 w-12 shrink-0 rounded-xl bg-canvas p-1 flex items-center justify-center border border-line">
+                <div className="h-12 w-12 shrink-0 rounded-xl bg-[#211522] p-1 flex items-center justify-center border border-[#593650]">
                   <ProductImage
                     src={selectedOffer.image || product.image}
                     alt={selectedOffer.name}
+                    category={selectedOffer.category || product.category}
                     className="h-full w-full object-contain"
                   />
                 </div>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-bold text-ink">{selectedOffer.name}</p>
-                  <p className="text-[10px] font-semibold text-mute">
+                  <p className="truncate text-xs font-bold text-white">{selectedOffer.name}</p>
+                  <p className="text-[10px] font-semibold text-[#94849A]">
                     {selectedOffer.packSize || normalizeUnitLabel(selectedOffer.unit) || selectedOffer.unit || '1 pack'}
                   </p>
                 </div>
               </div>
 
-              <span className="text-base font-black text-ink shrink-0">
+              <span className="text-base font-black text-white shrink-0">
                 {formatCurrency(selectedOffer.price)}
               </span>
             </div>
 
-            {/* Checklist Box matching Screen 3 */}
-            <div className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 space-y-2.5">
-              <p className="text-xs font-extrabold text-ink">Continue to this shop?</p>
-              <div className="space-y-1.5 text-xs text-ink/80 font-medium">
+            {/* Checklist Box */}
+            <div className="rounded-2xl border border-[#593650] bg-[#170F1B] p-4 space-y-2.5">
+              <p className="text-xs font-extrabold text-white">Continue to this shop?</p>
+              <div className="space-y-1.5 text-xs text-[#C4B4C9] font-medium">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-[#20C878] shrink-0" />
                   <span>You can add more items from this shop</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-[#20C878] shrink-0" />
                   <span>Your cart will be for this shop only</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="h-4 w-4 text-[#20C878] shrink-0" />
                   <span>You can compare other shops anytime</span>
                 </div>
               </div>
@@ -542,9 +559,9 @@ export default function ProductPage() {
             <div className="flex items-center gap-3 pt-1">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => setSelectedOffer(null)}
-                className="flex-1 rounded-2xl border border-pink-200 text-ink font-bold text-xs py-3"
+                className="flex-1 rounded-2xl text-xs py-3"
               >
                 Cancel
               </Button>
@@ -552,7 +569,7 @@ export default function ProductPage() {
                 type="button"
                 loading={submitting}
                 onClick={handleConfirmShopAndCatalogue}
-                className="flex-[2] rounded-2xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold text-xs py-3 shadow-md shadow-pink-500/25"
+                className="flex-[2] rounded-2xl text-xs py-3"
               >
                 View Shop Catalogue
               </Button>

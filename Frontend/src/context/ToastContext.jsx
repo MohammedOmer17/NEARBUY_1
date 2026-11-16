@@ -29,9 +29,9 @@ export function ToastProvider({ children }) {
         {toasts.map((t) => {
           const Icon = ICONS[t.type]
           return (
-            <div key={t.id} className="pointer-events-auto flex animate-toast items-start gap-3 rounded-2xl bg-white p-3.5 text-sm shadow-float">
+            <div key={t.id} className="pointer-events-auto flex animate-toast items-start gap-3 rounded-2xl border border-[#593650] bg-[#211522] p-3.5 text-sm shadow-float">
               <Icon className={`mt-0.5 h-5 w-5 shrink-0 ${TONE[t.type]}`} />
-              <p className="font-medium text-ink">{t.message}</p>
+              <p className="font-medium text-white">{t.message}</p>
             </div>
           )
         })}
